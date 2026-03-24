@@ -10,7 +10,9 @@ export default function DealForm({ deal, onClose, apiBase }) {
         assignedTo: '',
         blocker: '',
         followUpDate: '',
-        notes: ''
+        notes: '',
+        phoneNumber: '',
+        priority: 'Medium'
     });
     const [saving, setSaving] = useState(false);
     const [users, setUsers] = useState([]);
@@ -36,7 +38,9 @@ export default function DealForm({ deal, onClose, apiBase }) {
                 assignedTo: deal.assignedTo || '',
                 blocker: deal.blocker || '',
                 followUpDate: deal.followUpDate || '',
-                notes: deal.notes || ''
+                notes: deal.notes || '',
+                phoneNumber: deal.phoneNumber || '',
+                priority: deal.priority || 'Medium'
             });
         }
     }, [deal]);
@@ -82,6 +86,21 @@ export default function DealForm({ deal, onClose, apiBase }) {
                         <div style={{ flex: 1 }}>
                             <label className="text-secondary" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Account Owner *</label>
                             <input name="accountOwner" value={formData.accountOwner} onChange={handleChange} required disabled={!!deal} />
+                        </div>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                        <div style={{ flex: 1 }}>
+                            <label className="text-secondary" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Phone Number</label>
+                            <input type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} placeholder="+1 ..." />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <label className="text-secondary" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Priority</label>
+                            <select name="priority" value={formData.priority} onChange={handleChange}>
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                            </select>
                         </div>
                     </div>
 

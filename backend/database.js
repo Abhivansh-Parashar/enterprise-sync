@@ -34,12 +34,16 @@ const initDB = () => {
         blocker TEXT,
         followUpDate TEXT,
         notes TEXT,
-        status TEXT DEFAULT 'active'
+        status TEXT DEFAULT 'active',
+        phoneNumber TEXT,
+        priority TEXT DEFAULT 'Medium'
       )
     `);
 
         // Gracefully handle migration for existing databases
         try { await db.execute("ALTER TABLE deals ADD COLUMN status TEXT DEFAULT 'active'"); } catch (e) { /* ignore if column exists */ }
+        try { await db.execute("ALTER TABLE deals ADD COLUMN phoneNumber TEXT"); } catch (e) { }
+        try { await db.execute("ALTER TABLE deals ADD COLUMN priority TEXT DEFAULT 'Medium'"); } catch (e) { }
 
         await db.execute(`
       CREATE TABLE IF NOT EXISTS users (

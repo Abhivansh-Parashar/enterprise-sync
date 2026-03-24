@@ -169,12 +169,12 @@ app.get('/api/deals/closed', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/deals', authenticateToken, async (req, res) => {
-  const { clientName, accountOwner, stage, assignedTo, blocker, followUpDate, notes } = req.body;
+  const { clientName, accountOwner, stage, assignedTo, blocker, followUpDate, notes, phoneNumber, priority } = req.body;
   const lastUpdate = new Date().toISOString().split('T')[0];
   try {
     const result = await db.execute({
-      sql: `INSERT INTO deals (clientName, accountOwner, stage, lastUpdate, assignedTo, blocker, followUpDate, notes, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active')`,
-      args: [clientName, accountOwner, stage, lastUpdate, assignedTo, blocker, followUpDate, notes]
+      sql: `INSERT INTO deals (clientName, accountOwner, stage, lastUpdate, assignedTo, blocker, followUpDate, notes, status, phoneNumber, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
+      args: [clientName, accountOwner, stage, lastUpdate, assignedTo, blocker, followUpDate, notes, phoneNumber, priority || 'Medium']
     });
     res.json({ id: result.lastInsertRowid ? result.lastInsertRowid.toString() : null });
   } catch (err) {
@@ -183,12 +183,12 @@ app.post('/api/deals', authenticateToken, async (req, res) => {
 });
 
 app.put('/api/deals/:id', authenticateToken, async (req, res) => {
-  const { stage, assignedTo, blocker, followUpDate, notes } = req.body;
+  const { stage, assignedTo, blocker, followUpDate, notes, phoneNumber, priority } = req.body;
   const lastUpdate = new Date().toISOString().split('T')[0];
   try {
     const result = await db.execute({
-      sql: `UPDATE deals SET stage = ?, lastUpdate = ?, assignedTo = ?, blocker = ?, followUpDate = ?, notes = ? WHERE id = ?`,
-      args: [stage, lastUpdate, assignedTo, blocker, followUpDate, notes, req.params.id]
+      sql: `UPDATE deals SET stage = ?, lastUpdate = ?, assignedTo = ?, blocker = ?, followUpDate = ?, notes = ?, phoneNumber = ?, priority = ? WHERE id = ?`,
+      args: [stage, lastUpdate, assignedTo, blocker, followUpDate, notes, phoneNumber, priority || 'Medium', req.params.id]
     });
     res.json({ message: "Deal updated successfully", changes: result.rowsAffected });
   } catch (err) {

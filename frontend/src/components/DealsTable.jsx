@@ -21,7 +21,9 @@ export default function DealsTable({ deals, onEdit, onDelete, onCloseDeal }) {
                     <tr>
                         <th>Client</th>
                         <th>Account Owner</th>
+                        <th>Phone</th>
                         <th>Stage</th>
+                        <th>Priority</th>
                         <th>Last Update</th>
                         <th>Assigned To</th>
                         <th>Follow-up</th>
@@ -34,9 +36,15 @@ export default function DealsTable({ deals, onEdit, onDelete, onCloseDeal }) {
                         <tr key={deal.id}>
                             <td style={{ fontWeight: '500' }}>{deal.clientName}</td>
                             <td>{deal.accountOwner}</td>
+                            <td className="text-secondary">{deal.phoneNumber || '-'}</td>
                             <td>
                                 <span className={`badge ${getStageBadgeColor(deal.stage)}`}>
                                     {deal.stage}
+                                </span>
+                            </td>
+                            <td>
+                                <span className={`badge ${deal.priority === 'High' ? 'badge-danger' : deal.priority === 'Low' ? 'badge-secondary' : 'badge-warning'}`}>
+                                    {deal.priority || 'Medium'}
                                 </span>
                             </td>
                             <td className="text-secondary" style={{ fontSize: '0.875rem' }}>
