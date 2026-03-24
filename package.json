@@ -5,4 +5,3 @@
         "build": "node vercel-build.js"
     }
 }
-}
