@@ -41,7 +41,7 @@ export default function DealsTable({ deals, onEdit, onDelete, onCloseDeal }) {
                                 </span>
                             </td>
                             <td>
-                                <span className={`badge ${deal.priority === 'High' ? 'badge-danger' : deal.priority === 'Low' ? 'badge-secondary' : 'badge-warning'}`}>
+                                <span className={`badge ${deal.priority === 'High' ? 'badge-danger' : deal.priority === 'Low' ? 'badge-success' : 'badge-warning'}`}>
                                     {deal.priority || 'Medium'}
                                 </span>
                             </td>
