@@ -125,7 +125,7 @@ export default function DealForm({ deal, onClose, apiBase }) {
                         <select name="assignedTo" value={formData.assignedTo} onChange={handleChange}>
                             <option value="">- Select -</option>
                             {users.map(u => (
-                                <option key={u.id} value={u.name}>{u.name} ({u.role})</option>
+                                <option key={u.id} value={u.name}>{u.name}</option>
                             ))}
                         </select>
                     </div>

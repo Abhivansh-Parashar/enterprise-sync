@@ -123,7 +123,7 @@ export default function Dashboard() {
                         <Building color="var(--info)" size={28} />
                     </div>
                     <div>
-                        <p className="text-secondary" style={{ fontSize: '0.875rem' }}>Awaiting Manager</p>
+                        <p className="text-secondary" style={{ fontSize: '0.875rem' }}>Awaiting Action</p>
                         <h2 style={{ fontSize: '1.75rem', margin: 0 }}>{metrics.awaitingManager}</h2>
                     </div>
                 </div>
@@ -174,7 +174,7 @@ export default function Dashboard() {
             <div className="glass-panel" style={{ padding: '1.5rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                     <h3>Active Enterprise Sync Deals</h3>
-                    <button className="btn-primary" onClick={handleAddNewDeal}>+ Create New Deal</button>
+                    <button className="btn-primary" onClick={() => { window.scrollTo({ top: 0, behavior: 'instant' }); handleAddNewDeal(); }}>+ Create New Deal</button>
                 </div>
                 <DealsTable deals={deals} onEdit={handleEditDeal} onDelete={handleDeleteDeal} onCloseDeal={handleCloseDeal} />
             </div>
