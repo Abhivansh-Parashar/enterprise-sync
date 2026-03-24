@@ -115,6 +115,15 @@ function authenticateToken(req, res, next) {
 }
 
 // --- Profile Routes ---
+app.get('/api/users', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await db.execute("SELECT id, name, role FROM users ORDER BY name");
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/profile', authenticateToken, async (req, res) => {
   try {
     const { rows } = await db.execute({ sql: 'SELECT id, name, email, role FROM users WHERE id = ?', args: [req.user.id] });
