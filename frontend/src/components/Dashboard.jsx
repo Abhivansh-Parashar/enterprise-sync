@@ -21,8 +21,7 @@ export default function Dashboard() {
     const [filters, setFilters] = useState({
         client: { active: false, operator: 'contains', value: '' },
         stage: { active: false, operator: 'is', value: 'Discovery' },
-        priority: { active: false, operator: 'is', value: 'High' },
-        assigned: { active: false, operator: 'is', value: '' }
+        priority: { active: false, operator: 'is', value: 'High' }
     });
 
     const fetchData = async () => {
@@ -109,19 +108,13 @@ export default function Dashboard() {
                  if (f.operator === 'is') return val === f.value;
                  if (f.operator === 'is not') return val !== f.value;
             }
-            if (fKey === 'assigned') {
-                 val = deal.assignedTo || '';
-                 if (f.operator === 'is') return val === f.value;
-                 if (f.operator === 'is not') return val !== f.value;
-            }
             return true;
         };
 
         const checks = [
             filters.client.active ? evaluateFilter('client') : null,
             filters.stage.active ? evaluateFilter('stage') : null,
-            filters.priority.active ? evaluateFilter('priority') : null,
-            filters.assigned.active ? evaluateFilter('assigned') : null
+            filters.priority.active ? evaluateFilter('priority') : null
         ].filter(res => res !== null);
 
         if (filterMatch === 'All') {
@@ -286,9 +279,13 @@ export default function Dashboard() {
                                 <select style={{ background: '#333', color: 'white', border: '1px solid #444', borderRadius: '6px', padding: '0.4rem', flex: 1, outline: 'none' }}
                                     value={filters.stage.value} onChange={e => setFilters({...filters, stage: {...filters.stage, value: e.target.value}})}>
                                     <option value="Discovery">Discovery</option>
+                                    <option value="Going Well">Going Well</option>
+                                    <option value="Qualified">Qualified</option>
                                     <option value="Proposal">Proposal</option>
                                     <option value="Negotiation">Negotiation</option>
-                                    <option value="Won">Won</option>
+                                    <option value="Closing">Closing</option>
+                                    <option value="Closed Won">Closed Won</option>
+                                    <option value="Closed Lost">Closed Lost</option>
                                 </select>
                                 <button type="button" style={{ background: 'transparent', border: 'none', padding: 0 }} onClick={() => setFilters({...filters, stage: {...filters.stage, active: false}})}>
                                     <X size={16} color="#555" style={{ cursor: 'pointer' }} />
@@ -319,28 +316,6 @@ export default function Dashboard() {
                                 </button>
                             </div>
 
-                            {/* Assigned Row */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                <input type="checkbox" checked={filters.assigned.active} onChange={e => setFilters({...filters, assigned: {...filters.assigned, active: e.target.checked}})} 
-                                    style={{ width: '18px', height: '18px', accentColor: '#4b5563', cursor: 'pointer', margin: 0 }} />
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '90px' }}>
-                                    <User size={16} color="#888" />
-                                    <span style={{ color: '#aaa' }}>Assigned</span>
-                                </div>
-                                <select style={{ background: '#333', color: 'white', border: '1px solid #444', borderRadius: '6px', padding: '0.4rem', width: '90px', outline: 'none' }}
-                                    value={filters.assigned.operator} onChange={e => setFilters({...filters, assigned: {...filters.assigned, operator: e.target.value}})}>
-                                    <option value="is">is</option>
-                                    <option value="is not">is not</option>
-                                </select>
-                                <select style={{ background: '#333', color: 'white', border: '1px solid #444', borderRadius: '6px', padding: '0.4rem', flex: 1, outline: 'none' }}
-                                    value={filters.assigned.value} onChange={e => setFilters({...filters, assigned: {...filters.assigned, value: e.target.value}})}>
-                                    <option value="">- Unassigned -</option>
-                                    {uniqueAssignees.map(a => <option key={a} value={a}>{a}</option>)}
-                                </select>
-                                <button type="button" style={{ background: 'transparent', border: 'none', padding: 0 }} onClick={() => setFilters({...filters, assigned: {...filters.assigned, active: false}})}>
-                                    <X size={16} color="#555" style={{ cursor: 'pointer' }} />
-                                </button>
-                            </div>
 
                             {/* Client Name Row */}
                             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
