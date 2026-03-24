@@ -74,22 +74,7 @@ const initDB = () => {
           console.log('Seeded users table with Xindus default credentials.');
         }
 
-        // Seed initial deals if empty
-        const { rows: dealRows } = await db.execute("SELECT COUNT(*) AS count FROM deals");
-        if (dealRows[0].count === 0) {
-          const today = new Date().toISOString().split('T')[0];
-          const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0];
 
-          await db.execute({
-            sql: `INSERT INTO deals (clientName, accountOwner, stage, lastUpdate, assignedTo, blocker, followUpDate, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            args: ['Global Tech Industries', 'employee', 'Discovery', today, 'Account Owner', '', nextWeek, 'Initial meeting went well. Needs technical review.']
-          });
-          await db.execute({
-            sql: `INSERT INTO deals (clientName, accountOwner, stage, lastUpdate, assignedTo, blocker, followUpDate, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            args: ['Quantum Solutions', 'owner', 'Negotiation', today, 'Manager', 'Legal review pending on MSA', today, 'Waiting on procurement sign-off.']
-          });
-          console.log('Seeded deals table with initial demo deals.');
-        }
       } catch (err) {
         console.error('Error initializing database:', err.message);
         initPromise = null; // Allow retry if failure occurs
