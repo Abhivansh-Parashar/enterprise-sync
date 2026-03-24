@@ -73,7 +73,6 @@ function AppContent() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <span style={{ fontWeight: '500' }}>Welcome, {user?.name || user?.email?.split('@')[0]}</span>
-            <span className="badge badge-info">{user?.role}</span>
             {location.pathname === '/closed' ? (
               <Link to="/" className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
                 <LayoutDashboard size={16} /> Active Deals
