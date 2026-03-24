@@ -13,6 +13,19 @@ export default function DealForm({ deal, onClose, apiBase }) {
         notes: ''
     });
     const [saving, setSaving] = useState(false);
+    const [users, setUsers] = useState([]);
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const res = await axios.get(`${apiBase}/users`);
+                setUsers(res.data);
+            } catch (err) {
+                console.error("Failed to load users for assignment", err);
+            }
+        };
+        fetchUsers();
+    }, [apiBase]);
 
     useEffect(() => {
         if (deal) {
@@ -96,10 +109,9 @@ export default function DealForm({ deal, onClose, apiBase }) {
                         <label className="text-secondary" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Assigned To</label>
                         <select name="assignedTo" value={formData.assignedTo} onChange={handleChange}>
                             <option value="">- Select -</option>
-                            <option value="Account Owner">Account Owner</option>
-                            <option value="Manager">Manager</option>
-                            <option value="Legal">Legal</option>
-                            <option value="Procurement">Procurement</option>
+                            {users.map(u => (
+                                <option key={u.id} value={u.name}>{u.name} ({u.role})</option>
+                            ))}
                         </select>
                     </div>
 
