@@ -1,9 +1,17 @@
 const { createClient } = require('@libsql/client');
 require('dotenv').config();
 
-// Connect to local file by default... or Turso db URL if deployed
+// Connect to Turso Cloud DB if deployed, or local file for development
+const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
+const dbUrl = process.env.TURSO_DATABASE_URL || (isVercel ? null : 'file:deals.db');
+
+if (isVercel && !dbUrl) {
+  console.error("FATAL: Vercel environment variables are missing! Ensure TURSO_DATABASE_URL is saved and a Redeploy occurs.");
+  // Will gracefully crash the connection if not configured rather than creating fake ephemeral files
+}
+
 const db = createClient({
-  url: process.env.TURSO_DATABASE_URL || 'file:deals.db',
+  url: dbUrl || 'file:deals.db',
   authToken: process.env.TURSO_AUTH_TOKEN
 });
 

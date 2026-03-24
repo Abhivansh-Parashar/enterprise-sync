@@ -201,6 +201,19 @@ app.put('/api/deals/:id/close', authenticateToken, async (req, res) => {
 
 app.delete('/api/deals/:id', authenticateToken, async (req, res) => {
   try {
+    const result = await db.execute({
+      sql: "DELETE FROM deals WHERE id = ?",
+      args: [req.params.id]
+    });
+    if (result.rowsAffected === 0) return res.status(404).json({ error: "Deal not found" });
+    res.json({ message: "Deal completely deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/deals/:id', authenticateToken, async (req, res) => {
+  try {
     const result = await db.execute({ sql: 'DELETE FROM deals WHERE id = ?', args: [req.params.id] });
     res.json({ message: "Deal deleted successfully", changes: result.rowsAffected });
   } catch (err) {
