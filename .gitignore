@@ -1,0 +1,13 @@
+node_modules/
+.env
+backend/.env
+frontend/.env
+backend/deals.db
+backend/deals.db-journal
+backend/deals.db-wal
+.DS_Store
+dist/
+frontend/dist/
+build/
+backend/node_modules/
+frontend/node_modules/
