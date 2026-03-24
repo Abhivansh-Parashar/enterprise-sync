@@ -14,6 +14,7 @@ export default function Dashboard() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingDeal, setEditingDeal] = useState(null);
     const [deletingDealId, setDeletingDealId] = useState(null);
+    const [isFilterOpen, setIsFilterOpen] = useState(false);
 
     // Filter states
     const [searchQuery, setSearchQuery] = useState('');
@@ -193,39 +194,63 @@ export default function Dashboard() {
             )}
 
             {/* Main Deals Table */}
-            <div className="glass-panel" style={{ padding: '1.5rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <div className="glass-panel" style={{ padding: '1.5rem', overflow: 'visible' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', position: 'relative' }}>
                     <h3>Active Enterprise Sync Deals</h3>
-                    <button className="btn-primary" onClick={() => { window.scrollTo({ top: 0, behavior: 'instant' }); handleAddNewDeal(); }}>+ Create New Deal</button>
-                </div>
-
-                {/* Filter Bar */}
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', backgroundColor: 'rgba(255,255,255,0.5)', padding: '1rem', borderRadius: '12px' }}>
-                    <div style={{ flex: '1 1 250px' }}>
-                        <input 
-                            placeholder="🔍 Search clients or phones..." 
-                            value={searchQuery} 
-                            onChange={(e) => setSearchQuery(e.target.value)} 
-                            style={{ width: '100%', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'white' }}
-                        />
+                    <div style={{ display: 'flex', gap: '1rem' }}>
+                        <button className={`btn-secondary ${isFilterOpen ? 'active' : ''}`} onClick={() => setIsFilterOpen(!isFilterOpen)}>
+                            {isFilterOpen ? '✕ Close Filters' : '🔍 Filter Deals'}
+                        </button>
+                        <button className="btn-primary" onClick={() => { window.scrollTo({ top: 0, behavior: 'instant' }); handleAddNewDeal(); }}>+ Create New Deal</button>
                     </div>
-                    <select value={filterStage} onChange={(e) => setFilterStage(e.target.value)} style={{ padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', cursor: 'pointer' }}>
-                        <option value="All">Stage: All</option>
-                        <option value="Discovery">Discovery</option>
-                        <option value="Proposal">Proposal</option>
-                        <option value="Negotiation">Negotiation</option>
-                        <option value="Won">Won</option>
-                    </select>
-                    <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)} style={{ padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', cursor: 'pointer' }}>
-                        <option value="All">Priority: All</option>
-                        <option value="High">High</option>
-                        <option value="Medium">Medium</option>
-                        <option value="Low">Low</option>
-                    </select>
-                    <select value={filterAssignee} onChange={(e) => setFilterAssignee(e.target.value)} style={{ padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', cursor: 'pointer', maxWidth: '200px' }}>
-                        <option value="All">Assigned: All</option>
-                        {uniqueAssignees.map(a => <option key={a} value={a}>{a}</option>)}
-                    </select>
+
+                    {/* Filter Popup Menu */}
+                    {isFilterOpen && (
+                        <div className="glass-panel animate-fade-in" style={{ 
+                            position: 'absolute', 
+                            top: '100%', 
+                            right: 'auto', 
+                            marginTop: '0.5rem', 
+                            padding: '1.5rem', 
+                            zIndex: 50, 
+                            display: 'flex', 
+                            flexDirection: 'column', 
+                            gap: '1rem',
+                            minWidth: '320px',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.15)' 
+                        }}>
+                            <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-primary)' }}>Filter Pipeline</h4>
+                            <input 
+                                placeholder="Search clients or phones..." 
+                                value={searchQuery} 
+                                onChange={(e) => setSearchQuery(e.target.value)} 
+                                style={{ width: '100%', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'white' }}
+                            />
+                            <select value={filterStage} onChange={(e) => setFilterStage(e.target.value)} style={{ width: '100%', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', cursor: 'pointer' }}>
+                                <option value="All">Stage: All</option>
+                                <option value="Discovery">Discovery</option>
+                                <option value="Proposal">Proposal</option>
+                                <option value="Negotiation">Negotiation</option>
+                                <option value="Won">Won</option>
+                            </select>
+                            <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)} style={{ width: '100%', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', cursor: 'pointer' }}>
+                                <option value="All">Priority: All</option>
+                                <option value="High">High</option>
+                                <option value="Medium">Medium</option>
+                                <option value="Low">Low</option>
+                            </select>
+                            <select value={filterAssignee} onChange={(e) => setFilterAssignee(e.target.value)} style={{ width: '100%', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', cursor: 'pointer' }}>
+                                <option value="All">Assigned: All</option>
+                                {uniqueAssignees.map(a => <option key={a} value={a}>{a}</option>)}
+                            </select>
+                            
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                                <button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => { setSearchQuery(''); setFilterStage('All'); setFilterPriority('All'); setFilterAssignee('All'); setIsFilterOpen(false); }}>
+                                    Clear Filters
+                                </button>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <DealsTable deals={filteredDeals} onEdit={handleEditDeal} onDelete={handleDeleteDeal} onCloseDeal={handleCloseDeal} />
