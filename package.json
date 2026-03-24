@@ -1,0 +1,7 @@
+{
+    "name": "enterprise-sync-root",
+    "private": true,
+    "scripts": {
+        "vercel-build": "cd frontend && npm install && npm run build && cd ../backend && npm install"
+    }
+}
