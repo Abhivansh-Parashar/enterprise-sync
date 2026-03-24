@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
-import { AlertCircle, Calendar, Briefcase, Building, ShieldAlert } from 'lucide-react';
+import { AlertCircle, Calendar, Briefcase, Building, ShieldAlert, Archive, User, X } from 'lucide-react';
 import DealsTable from './DealsTable';
 import DealForm from './DealForm';
 
@@ -16,11 +16,14 @@ export default function Dashboard() {
     const [deletingDealId, setDeletingDealId] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-    // Filter states
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filterStage, setFilterStage] = useState('All');
-    const [filterPriority, setFilterPriority] = useState('All');
-    const [filterAssignee, setFilterAssignee] = useState('All');
+    // LeetCode-style Filter states
+    const [filterMatch, setFilterMatch] = useState('All');
+    const [filters, setFilters] = useState({
+        client: { active: false, operator: 'contains', value: '' },
+        stage: { active: false, operator: 'is', value: 'Discovery' },
+        priority: { active: false, operator: 'is', value: 'High' },
+        assigned: { active: false, operator: 'is', value: '' }
+    });
 
     const fetchData = async () => {
         try {
@@ -87,14 +90,45 @@ export default function Dashboard() {
     );
 
     const uniqueAssignees = [...new Set(deals.map(d => d.assignedTo).filter(Boolean))];
+    
     const filteredDeals = deals.filter(deal => {
-        const matchesSearch = deal.clientName.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                              (deal.phoneNumber && deal.phoneNumber.includes(searchQuery));
-        const matchesStage = filterStage === 'All' || deal.stage === filterStage;
-        const matchesPriority = filterPriority === 'All' || deal.priority === filterPriority;
-        const matchesAssignee = filterAssignee === 'All' || deal.assignedTo === filterAssignee;
-        
-        return matchesSearch && matchesStage && matchesPriority && matchesAssignee;
+        const activeFilters = Object.values(filters).filter(f => f.active);
+        if (activeFilters.length === 0) return true;
+
+        const evaluateFilter = (fKey) => {
+            const f = filters[fKey];
+            if (!f.active) return filterMatch === 'All' ? true : false;
+            let val = deal[fKey] || '';
+            if (fKey === 'client') {
+                 val = deal.clientName || '';
+                 if (f.operator === 'contains') return val.toLowerCase().includes(f.value.toLowerCase());
+                 if (f.operator === 'is') return val.toLowerCase() === f.value.toLowerCase();
+                 return true;
+            }
+            if (fKey === 'stage' || fKey === 'priority') {
+                 if (f.operator === 'is') return val === f.value;
+                 if (f.operator === 'is not') return val !== f.value;
+            }
+            if (fKey === 'assigned') {
+                 val = deal.assignedTo || '';
+                 if (f.operator === 'is') return val === f.value;
+                 if (f.operator === 'is not') return val !== f.value;
+            }
+            return true;
+        };
+
+        const checks = [
+            filters.client.active ? evaluateFilter('client') : null,
+            filters.stage.active ? evaluateFilter('stage') : null,
+            filters.priority.active ? evaluateFilter('priority') : null,
+            filters.assigned.active ? evaluateFilter('assigned') : null
+        ].filter(res => res !== null);
+
+        if (filterMatch === 'All') {
+            return checks.every(res => res === true);
+        } else {
+            return checks.some(res => res === true);
+        }
     });
 
     return (
@@ -204,49 +238,127 @@ export default function Dashboard() {
                         <button className="btn-primary" onClick={() => { window.scrollTo({ top: 0, behavior: 'instant' }); handleAddNewDeal(); }}>+ Create New Deal</button>
                     </div>
 
-                    {/* Filter Popup Menu */}
+                    {/* Filter Popup Menu (LeetCode Style) */}
                     {isFilterOpen && (
-                        <div className="glass-panel animate-fade-in" style={{ 
+                        <div className="animate-fade-in" style={{ 
                             position: 'absolute', 
                             top: '100%', 
-                            right: 'auto', 
+                            left: '50%',
+                            transform: 'translateX(-50%)',
                             marginTop: '0.5rem', 
-                            padding: '1.5rem', 
-                            zIndex: 50, 
+                            padding: '1.25rem', 
+                            zIndex: 60, 
+                            backgroundColor: '#282828',
+                            color: '#E0E0E0',
+                            borderRadius: '8px', 
                             display: 'flex', 
                             flexDirection: 'column', 
                             gap: '1rem',
-                            minWidth: '320px',
-                            boxShadow: '0 10px 25px rgba(0,0,0,0.15)' 
+                            minWidth: '500px',
+                            boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                            fontSize: '0.875rem'
                         }}>
-                            <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--text-primary)' }}>Filter Pipeline</h4>
-                            <input 
-                                placeholder="Search clients or phones..." 
-                                value={searchQuery} 
-                                onChange={(e) => setSearchQuery(e.target.value)} 
-                                style={{ width: '100%', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'white' }}
-                            />
-                            <select value={filterStage} onChange={(e) => setFilterStage(e.target.value)} style={{ width: '100%', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', cursor: 'pointer' }}>
-                                <option value="All">Stage: All</option>
-                                <option value="Discovery">Discovery</option>
-                                <option value="Proposal">Proposal</option>
-                                <option value="Negotiation">Negotiation</option>
-                                <option value="Won">Won</option>
-                            </select>
-                            <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)} style={{ width: '100%', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', cursor: 'pointer' }}>
-                                <option value="All">Priority: All</option>
-                                <option value="High">High</option>
-                                <option value="Medium">Medium</option>
-                                <option value="Low">Low</option>
-                            </select>
-                            <select value={filterAssignee} onChange={(e) => setFilterAssignee(e.target.value)} style={{ width: '100%', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', cursor: 'pointer' }}>
-                                <option value="All">Assigned: All</option>
-                                {uniqueAssignees.map(a => <option key={a} value={a}>{a}</option>)}
-                            </select>
-                            
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-                                <button className="btn-secondary" style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }} onClick={() => { setSearchQuery(''); setFilterStage('All'); setFilterPriority('All'); setFilterAssignee('All'); setIsFilterOpen(false); }}>
-                                    Clear Filters
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                <span style={{ fontWeight: '600', color: 'white', fontSize: '1rem' }}>Match</span>
+                                <select 
+                                    value={filterMatch} 
+                                    onChange={e => setFilterMatch(e.target.value)}
+                                    style={{ background: '#333', color: 'white', border: '1px solid #444', borderRadius: '6px', padding: '0.3rem 0.5rem', outline: 'none' }}>
+                                    <option value="All">All</option>
+                                    <option value="Any">Any</option>
+                                </select>
+                                <span style={{ fontWeight: '600', color: 'white', fontSize: '1rem' }}>of the following filters:</span>
+                            </div>
+
+                            {/* Stage Row */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <input type="checkbox" checked={filters.stage.active} onChange={e => setFilters({...filters, stage: {...filters.stage, active: e.target.checked}})} 
+                                    style={{ width: '18px', height: '18px', accentColor: '#4b5563', cursor: 'pointer', margin: 0 }} />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '90px' }}>
+                                    <Archive size={16} color="#888" />
+                                    <span style={{ color: '#aaa' }}>Stage</span>
+                                </div>
+                                <select style={{ background: '#333', color: 'white', border: '1px solid #444', borderRadius: '6px', padding: '0.4rem', width: '90px', outline: 'none' }}
+                                    value={filters.stage.operator} onChange={e => setFilters({...filters, stage: {...filters.stage, operator: e.target.value}})}>
+                                    <option value="is">is</option>
+                                    <option value="is not">is not</option>
+                                </select>
+                                <select style={{ background: '#333', color: 'white', border: '1px solid #444', borderRadius: '6px', padding: '0.4rem', flex: 1, outline: 'none' }}
+                                    value={filters.stage.value} onChange={e => setFilters({...filters, stage: {...filters.stage, value: e.target.value}})}>
+                                    <option value="Discovery">Discovery</option>
+                                    <option value="Proposal">Proposal</option>
+                                    <option value="Negotiation">Negotiation</option>
+                                    <option value="Won">Won</option>
+                                </select>
+                                <button type="button" style={{ background: 'transparent', border: 'none', padding: 0 }} onClick={() => setFilters({...filters, stage: {...filters.stage, active: false}})}>
+                                    <X size={16} color="#555" style={{ cursor: 'pointer' }} />
+                                </button>
+                            </div>
+
+                            {/* Priority Row */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <input type="checkbox" checked={filters.priority.active} onChange={e => setFilters({...filters, priority: {...filters.priority, active: e.target.checked}})} 
+                                    style={{ width: '18px', height: '18px', accentColor: '#4b5563', cursor: 'pointer', margin: 0 }} />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '90px' }}>
+                                    <AlertCircle size={16} color="#888" />
+                                    <span style={{ color: '#aaa' }}>Priority</span>
+                                </div>
+                                <select style={{ background: '#333', color: 'white', border: '1px solid #444', borderRadius: '6px', padding: '0.4rem', width: '90px', outline: 'none' }}
+                                    value={filters.priority.operator} onChange={e => setFilters({...filters, priority: {...filters.priority, operator: e.target.value}})}>
+                                    <option value="is">is</option>
+                                    <option value="is not">is not</option>
+                                </select>
+                                <select style={{ background: '#333', color: 'white', border: '1px solid #444', borderRadius: '6px', padding: '0.4rem', flex: 1, outline: 'none' }}
+                                    value={filters.priority.value} onChange={e => setFilters({...filters, priority: {...filters.priority, value: e.target.value}})}>
+                                    <option value="High">High</option>
+                                    <option value="Medium">Medium</option>
+                                    <option value="Low">Low</option>
+                                </select>
+                                <button type="button" style={{ background: 'transparent', border: 'none', padding: 0 }} onClick={() => setFilters({...filters, priority: {...filters.priority, active: false}})}>
+                                    <X size={16} color="#555" style={{ cursor: 'pointer' }} />
+                                </button>
+                            </div>
+
+                            {/* Assigned Row */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <input type="checkbox" checked={filters.assigned.active} onChange={e => setFilters({...filters, assigned: {...filters.assigned, active: e.target.checked}})} 
+                                    style={{ width: '18px', height: '18px', accentColor: '#4b5563', cursor: 'pointer', margin: 0 }} />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '90px' }}>
+                                    <User size={16} color="#888" />
+                                    <span style={{ color: '#aaa' }}>Assigned</span>
+                                </div>
+                                <select style={{ background: '#333', color: 'white', border: '1px solid #444', borderRadius: '6px', padding: '0.4rem', width: '90px', outline: 'none' }}
+                                    value={filters.assigned.operator} onChange={e => setFilters({...filters, assigned: {...filters.assigned, operator: e.target.value}})}>
+                                    <option value="is">is</option>
+                                    <option value="is not">is not</option>
+                                </select>
+                                <select style={{ background: '#333', color: 'white', border: '1px solid #444', borderRadius: '6px', padding: '0.4rem', flex: 1, outline: 'none' }}
+                                    value={filters.assigned.value} onChange={e => setFilters({...filters, assigned: {...filters.assigned, value: e.target.value}})}>
+                                    <option value="">- Unassigned -</option>
+                                    {uniqueAssignees.map(a => <option key={a} value={a}>{a}</option>)}
+                                </select>
+                                <button type="button" style={{ background: 'transparent', border: 'none', padding: 0 }} onClick={() => setFilters({...filters, assigned: {...filters.assigned, active: false}})}>
+                                    <X size={16} color="#555" style={{ cursor: 'pointer' }} />
+                                </button>
+                            </div>
+
+                            {/* Client Name Row */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                                <input type="checkbox" checked={filters.client.active} onChange={e => setFilters({...filters, client: {...filters.client, active: e.target.checked}})} 
+                                    style={{ width: '18px', height: '18px', accentColor: '#4b5563', cursor: 'pointer', margin: 0 }} />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', width: '90px' }}>
+                                    <Briefcase size={16} color="#888" />
+                                    <span style={{ color: '#aaa' }}>Client</span>
+                                </div>
+                                <select style={{ background: '#333', color: 'white', border: '1px solid #444', borderRadius: '6px', padding: '0.4rem', width: '90px', outline: 'none' }}
+                                    value={filters.client.operator} onChange={e => setFilters({...filters, client: {...filters.client, operator: e.target.value}})}>
+                                    <option value="contains">contains</option>
+                                    <option value="is">is</option>
+                                </select>
+                                <input style={{ background: '#333', color: 'white', border: '1px solid #444', borderRadius: '6px', padding: '0.4rem', flex: 1, outline: 'none' }} 
+                                    value={filters.client.value} onChange={e => setFilters({...filters, client: {...filters.client, value: e.target.value}})} placeholder="e.g. Acme corp" />
+                                <button type="button" style={{ background: 'transparent', border: 'none', padding: 0 }} onClick={() => setFilters({...filters, client: {...filters.client, active: false}})}>
+                                    <X size={16} color="#555" style={{ cursor: 'pointer' }} />
                                 </button>
                             </div>
                         </div>
