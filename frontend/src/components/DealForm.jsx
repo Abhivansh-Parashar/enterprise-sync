@@ -83,10 +83,6 @@ export default function DealForm({ deal, onClose, apiBase }) {
                             <label className="text-secondary" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Client Name *</label>
                             <input name="clientName" value={formData.clientName} onChange={handleChange} required disabled={!!deal} placeholder="e.g. Acme Corp" />
                         </div>
-                        <div style={{ flex: 1 }}>
-                            <label className="text-secondary" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Account Owner *</label>
-                            <input name="accountOwner" value={formData.accountOwner} onChange={handleChange} required disabled={!!deal} />
-                        </div>
                     </div>
 
                     <div style={{ display: 'flex', gap: '1rem' }}>

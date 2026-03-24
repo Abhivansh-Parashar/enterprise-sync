@@ -174,7 +174,7 @@ app.post('/api/deals', authenticateToken, async (req, res) => {
   try {
     const result = await db.execute({
       sql: `INSERT INTO deals (clientName, accountOwner, stage, lastUpdate, assignedTo, blocker, followUpDate, notes, status, phoneNumber, priority) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?)`,
-      args: [clientName, accountOwner, stage, lastUpdate, assignedTo, blocker, followUpDate, notes, phoneNumber, priority || 'Medium']
+      args: [clientName, accountOwner || assignedTo || 'Unassigned', stage, lastUpdate, assignedTo, blocker, followUpDate, notes, phoneNumber, priority || 'Medium']
     });
     res.json({ id: result.lastInsertRowid ? result.lastInsertRowid.toString() : null });
   } catch (err) {

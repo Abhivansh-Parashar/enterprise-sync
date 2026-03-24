@@ -20,7 +20,6 @@ export default function DealsTable({ deals, onEdit, onDelete, onCloseDeal }) {
                 <thead>
                     <tr>
                         <th>Client</th>
-                        <th>Account Owner</th>
                         <th>Phone</th>
                         <th>Stage</th>
                         <th>Priority</th>
@@ -35,7 +34,6 @@ export default function DealsTable({ deals, onEdit, onDelete, onCloseDeal }) {
                     {deals.map(deal => (
                         <tr key={deal.id}>
                             <td style={{ fontWeight: '500' }}>{deal.clientName}</td>
-                            <td>{deal.accountOwner}</td>
                             <td className="text-secondary">{deal.phoneNumber || '-'}</td>
                             <td>
                                 <span className={`badge ${getStageBadgeColor(deal.stage)}`}>
