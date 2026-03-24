@@ -4,7 +4,7 @@ const cors = require('cors');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
 const cron = require('node-cron');
-const db = require('./database');
+const { db, initDB } = require('./database');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -12,6 +12,19 @@ const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 
 app.use(cors());
 app.use(express.json());
+
+// Initialize database dynamically on Vercel Cold Starts before routing
+app.use(async (req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    try {
+      await initDB();
+    } catch (err) {
+      console.error("Database cold-start failure:", err);
+      return res.status(500).json({ error: "Failed to initialize database connection" });
+    }
+  }
+  next();
+});
 
 // --- Mailer Setup ---
 let transporter;
