@@ -15,6 +15,12 @@ export default function Dashboard() {
     const [editingDeal, setEditingDeal] = useState(null);
     const [deletingDealId, setDeletingDealId] = useState(null);
 
+    // Filter states
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterStage, setFilterStage] = useState('All');
+    const [filterPriority, setFilterPriority] = useState('All');
+    const [filterAssignee, setFilterAssignee] = useState('All');
+
     const fetchData = async () => {
         try {
             const [metricsRes, dealsRes] = await Promise.all([
@@ -73,7 +79,22 @@ export default function Dashboard() {
         }
     };
 
-    if (loading) return <div className="animate-fade-in" style={{ textAlign: 'center', marginTop: '4rem' }}>Loading dashboard data...</div>;
+    if (loading) return (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
+            Loading dashboard data...
+        </div>
+    );
+
+    const uniqueAssignees = [...new Set(deals.map(d => d.assignedTo).filter(Boolean))];
+    const filteredDeals = deals.filter(deal => {
+        const matchesSearch = deal.clientName.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                              (deal.phoneNumber && deal.phoneNumber.includes(searchQuery));
+        const matchesStage = filterStage === 'All' || deal.stage === filterStage;
+        const matchesPriority = filterPriority === 'All' || deal.priority === filterPriority;
+        const matchesAssignee = filterAssignee === 'All' || deal.assignedTo === filterAssignee;
+        
+        return matchesSearch && matchesStage && matchesPriority && matchesAssignee;
+    });
 
     return (
         <div className="animate-fade-in">
@@ -177,7 +198,37 @@ export default function Dashboard() {
                     <h3>Active Enterprise Sync Deals</h3>
                     <button className="btn-primary" onClick={() => { window.scrollTo({ top: 0, behavior: 'instant' }); handleAddNewDeal(); }}>+ Create New Deal</button>
                 </div>
-                <DealsTable deals={deals} onEdit={handleEditDeal} onDelete={handleDeleteDeal} onCloseDeal={handleCloseDeal} />
+
+                {/* Filter Bar */}
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap', backgroundColor: 'rgba(255,255,255,0.5)', padding: '1rem', borderRadius: '12px' }}>
+                    <div style={{ flex: '1 1 250px' }}>
+                        <input 
+                            placeholder="🔍 Search clients or phones..." 
+                            value={searchQuery} 
+                            onChange={(e) => setSearchQuery(e.target.value)} 
+                            style={{ width: '100%', padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'white' }}
+                        />
+                    </div>
+                    <select value={filterStage} onChange={(e) => setFilterStage(e.target.value)} style={{ padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', cursor: 'pointer' }}>
+                        <option value="All">Stage: All</option>
+                        <option value="Discovery">Discovery</option>
+                        <option value="Proposal">Proposal</option>
+                        <option value="Negotiation">Negotiation</option>
+                        <option value="Won">Won</option>
+                    </select>
+                    <select value={filterPriority} onChange={(e) => setFilterPriority(e.target.value)} style={{ padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', cursor: 'pointer' }}>
+                        <option value="All">Priority: All</option>
+                        <option value="High">High</option>
+                        <option value="Medium">Medium</option>
+                        <option value="Low">Low</option>
+                    </select>
+                    <select value={filterAssignee} onChange={(e) => setFilterAssignee(e.target.value)} style={{ padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid rgba(0,0,0,0.1)', background: 'white', cursor: 'pointer', maxWidth: '200px' }}>
+                        <option value="All">Assigned: All</option>
+                        {uniqueAssignees.map(a => <option key={a} value={a}>{a}</option>)}
+                    </select>
+                </div>
+
+                <DealsTable deals={filteredDeals} onEdit={handleEditDeal} onDelete={handleDeleteDeal} onCloseDeal={handleCloseDeal} />
             </div>
 
             {/* Deal Add/Edit Modal */}
