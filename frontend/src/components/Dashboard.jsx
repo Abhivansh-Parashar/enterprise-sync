@@ -189,7 +189,7 @@ export default function Dashboard() {
             )}
 
             {/* Custom Delete Confirmation Modal */}
-            {deletingDealId && (
+            {deletingDealId && createPortal(
                 <div className="modal-overlay">
                     <div className="modal-content animate-fade-in" style={{ maxWidth: '400px', textAlign: 'center' }}>
                         <ShieldAlert size={48} color="var(--danger)" style={{ margin: '0 auto 1rem' }} />
@@ -202,7 +202,8 @@ export default function Dashboard() {
                             </button>
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

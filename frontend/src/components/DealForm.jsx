@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import axios from 'axios';
 import { X } from 'lucide-react';
 
@@ -68,7 +69,7 @@ export default function DealForm({ deal, onClose, apiBase }) {
         }
     };
 
-    return (
+    return createPortal(
         <div className="modal-overlay">
             <div className="modal-content">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -149,6 +150,7 @@ export default function DealForm({ deal, onClose, apiBase }) {
                     </div>
                 </form>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
