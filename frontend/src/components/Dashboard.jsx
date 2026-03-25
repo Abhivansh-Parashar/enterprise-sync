@@ -11,6 +11,7 @@ export default function Dashboard() {
     const [metrics, setMetrics] = useState(null);
     const [deals, setDeals] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingDeal, setEditingDeal] = useState(null);
     const [deletingDealId, setDeletingDealId] = useState(null);
@@ -26,14 +27,16 @@ export default function Dashboard() {
 
     const fetchData = async () => {
         try {
+            setError(null);
             const [metricsRes, dealsRes] = await Promise.all([
                 axios.get(`${API_BASE}/metrics`),
                 axios.get(`${API_BASE}/deals`)
             ]);
             setMetrics(metricsRes.data);
             setDeals(dealsRes.data);
-        } catch (error) {
-            console.error('Error fetching data:', error);
+        } catch (err) {
+            console.error('Error fetching data:', err);
+            setError(err.message || 'Failed to connect to the server');
         } finally {
             setLoading(false);
         }
@@ -85,6 +88,15 @@ export default function Dashboard() {
     if (loading) return (
         <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem', color: 'var(--text-secondary)' }}>
             Loading dashboard data...
+        </div>
+    );
+
+    if (error || !metrics) return (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem', color: 'var(--danger)', gap: '1rem' }}>
+            <ShieldAlert size={48} />
+            <h2>Server Connection Failed</h2>
+            <p>We hit a snag connecting to the database. (Turso Cold-Start Latency)</p>
+            <button className="btn-primary" onClick={() => { setLoading(true); fetchData(); }}>Try Again</button>
         </div>
     );
 
