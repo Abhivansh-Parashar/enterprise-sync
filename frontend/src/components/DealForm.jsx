@@ -122,13 +122,8 @@ export default function DealForm({ deal, onClose, apiBase }) {
                     </div>
 
                     <div>
-                        <label className="text-secondary" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Assigned To</label>
-                        <select name="assignedTo" value={formData.assignedTo} onChange={handleChange}>
-                            <option value="">- Select -</option>
-                            {users.map(u => (
-                                <option key={u.id} value={u.name}>{u.name}</option>
-                            ))}
-                        </select>
+                        <label className="text-secondary" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Remark</label>
+                        <input name="assignedTo" value={formData.assignedTo} onChange={handleChange} placeholder="Add a short remark..." />
                     </div>
 
                     <div>

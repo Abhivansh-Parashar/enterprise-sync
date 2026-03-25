@@ -24,7 +24,7 @@ export default function DealsTable({ deals, onEdit, onDelete, onCloseDeal }) {
                         <th>Stage</th>
                         <th>Priority</th>
                         <th>Last Update</th>
-                        <th>Assigned To</th>
+                        <th>Remark</th>
                         <th>Follow-up</th>
                         <th>Blocker</th>
                         <th>Actions</th>
@@ -50,7 +50,7 @@ export default function DealsTable({ deals, onEdit, onDelete, onCloseDeal }) {
                             </td>
                             <td>
                                 {deal.assignedTo && (
-                                    <span className="badge badge-secondary" style={{ background: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)' }}>
+                                    <span style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
                                         {deal.assignedTo}
                                     </span>
                                 )}

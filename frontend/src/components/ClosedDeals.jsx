@@ -58,7 +58,7 @@ export default function ClosedDeals() {
                                     <th style={{ textAlign: 'left', padding: '1rem', borderBottom: '1px solid var(--border)' }}>Client / Company</th>
                                     <th style={{ textAlign: 'left', padding: '1rem', borderBottom: '1px solid var(--border)' }}>Stage</th>
                                     <th style={{ textAlign: 'left', padding: '1rem', borderBottom: '1px solid var(--border)' }}>Last Update</th>
-                                    <th style={{ textAlign: 'left', padding: '1rem', borderBottom: '1px solid var(--surface-border)' }}>Assigned</th>
+                                    <th style={{ textAlign: 'left', padding: '1rem', borderBottom: '1px solid var(--surface-border)' }}>Remark</th>
                                     <th style={{ textAlign: 'left', padding: '1rem', borderBottom: '1px solid var(--surface-border)' }}>Actions</th>
                                 </tr>
                             </thead>
