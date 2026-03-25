@@ -19,6 +19,7 @@ export default function Dashboard() {
 
     // LeetCode-style Filter states
     const [filterMatch, setFilterMatch] = useState('All');
+    const [sortOption, setSortOption] = useState('newest');
     const [filters, setFilters] = useState({
         client: { active: false, operator: 'contains', value: '' },
         stage: { active: false, operator: 'is', value: 'Discovery' },
@@ -136,6 +137,27 @@ export default function Dashboard() {
         }
     });
 
+    const sortedDeals = [...filteredDeals].sort((a, b) => {
+        if (sortOption === 'priority_desc' || sortOption === 'priority_asc') {
+            const levels = { 'High': 3, 'Medium': 2, 'Low': 1 };
+            const pA = levels[a.priority] || 2;
+            const pB = levels[b.priority] || 2;
+            if (pA !== pB) {
+                return sortOption === 'priority_desc' ? pB - pA : pA - pB;
+            }
+        }
+        if (sortOption === 'followup_asc' || sortOption === 'followup_desc') {
+            const dateA = a.followUpDate ? new Date(a.followUpDate).getTime() : 0;
+            const dateB = b.followUpDate ? new Date(b.followUpDate).getTime() : 0;
+            if (dateA !== dateB) {
+                if (dateA === 0) return 1;
+                if (dateB === 0) return -1;
+                return sortOption === 'followup_asc' ? dateA - dateB : dateB - dateA;
+            }
+        }
+        return b.id - a.id;
+    });
+
     return (
         <div className="animate-fade-in">
             {/* Metrics Row */}
@@ -236,7 +258,14 @@ export default function Dashboard() {
             <div className="glass-panel" style={{ padding: '1.5rem', overflow: 'visible' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', position: 'relative' }}>
                     <h3>Active Enterprise Sync Deals</h3>
-                    <div style={{ display: 'flex', gap: '1rem' }}>
+                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <select className="btn-secondary" style={{ padding: '0.4rem 0.8rem', borderRadius: '6px', outline: 'none' }} value={sortOption} onChange={(e) => setSortOption(e.target.value)}>
+                            <option value="newest">Sort: By Latest</option>
+                            <option value="priority_desc">Priority: High to Low</option>
+                            <option value="priority_asc">Priority: Low to High</option>
+                            <option value="followup_asc">Follow-up: Closest</option>
+                            <option value="followup_desc">Follow-up: Farthest</option>
+                        </select>
                         <button className={`btn-secondary ${isFilterOpen ? 'active' : ''}`} onClick={() => setIsFilterOpen(!isFilterOpen)}>
                             {isFilterOpen ? '✕ Close Filters' : '🔍 Filter Deals'}
                         </button>
@@ -352,7 +381,7 @@ export default function Dashboard() {
                     )}
                 </div>
 
-                <DealsTable deals={filteredDeals} onEdit={handleEditDeal} onDelete={handleDeleteDeal} onCloseDeal={handleCloseDeal} />
+                <DealsTable deals={sortedDeals} onEdit={handleEditDeal} onDelete={handleDeleteDeal} onCloseDeal={handleCloseDeal} />
             </div>
 
             {/* Deal Add/Edit Modal */}
