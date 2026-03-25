@@ -22,6 +22,20 @@ axios.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+// Global Axios Response Interceptor for Expired Tokens
+axios.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+      console.warn("JWT Token expired or invalid. Auto-logging out...");
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/'; 
+    }
+    return Promise.reject(error);
+  }
+);
+
 function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
   const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
