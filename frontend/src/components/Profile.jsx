@@ -12,7 +12,7 @@ export default function Profile() {
     useEffect(() => {
         const fetchProfile = async () => {
             try {
-                const res = await axios.get('/profile');
+                const res = await axios.get('/api/profile');
                 setProfile({ name: res.data.name, email: res.data.email, role: res.data.role });
             } catch (err) {
                 setMessage({ type: 'error', text: 'Error fetching profile data.' });
@@ -32,7 +32,7 @@ export default function Profile() {
             const payload = { name: profile.name, email: profile.email };
             if (password) payload.password = password;
 
-            const res = await axios.put('/profile', payload);
+            const res = await axios.put('/api/profile', payload);
 
             // Update local storage user data seamlessly
             const currentUser = JSON.parse(localStorage.getItem('user'));

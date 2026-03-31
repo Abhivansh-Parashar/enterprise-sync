@@ -221,15 +221,6 @@ app.delete('/api/deals/:id', authenticateToken, async (req, res) => {
   }
 });
 
-app.delete('/api/deals/:id', authenticateToken, async (req, res) => {
-  try {
-    const result = await db.execute({ sql: 'DELETE FROM deals WHERE id = ?', args: [req.params.id] });
-    res.json({ message: "Deal deleted successfully", changes: result.rowsAffected });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 app.get('/api/metrics', authenticateToken, async (req, res) => {
   const today = new Date().toISOString().split('T')[0];
   const twoDaysAgoDate = new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0];

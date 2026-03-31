@@ -10,7 +10,7 @@ export default function ClosedDeals() {
     useEffect(() => {
         const fetchClosedDeals = async () => {
             try {
-                const res = await axios.get('/deals/closed');
+                const res = await axios.get('/api/deals/closed');
                 setDeals(res.data);
             } catch (error) {
                 console.error('Error fetching closed deals:', error);
@@ -24,7 +24,7 @@ export default function ClosedDeals() {
     const handleDelete = async (id) => {
         if (window.confirm("Are you sure you want to permanently delete this archived deal? This action cannot be undone.")) {
             try {
-                await axios.delete(`/deals/${id}`);
+                await axios.delete(`/api/deals/${id}`);
                 setDeals(deals.filter(deal => deal.id !== id));
             } catch (error) {
                 console.error('Error deleting deal:', error);

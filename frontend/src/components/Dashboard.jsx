@@ -7,7 +7,7 @@ import DealForm from './DealForm';
 import QuotesSection from './QuotesSection';
 import EmailThreads from './EmailThreads';
 
-const API_BASE = '';
+const API_BASE = '/api';
 
 export default function Dashboard() {
     const [metrics, setMetrics] = useState(null);
