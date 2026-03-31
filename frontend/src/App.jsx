@@ -134,12 +134,11 @@ function Layout({ onLogout }) {
             </aside>
 
             {/* Main content */}
-            <div style={{ marginLeft: '240px', flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-                {/* Top bar (mobile) */}
-                <header style={{
+            <div className="main-content" style={{ marginLeft: '240px', flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                {/* Top bar (mobile only) */}
+                <header className="mobile-header" style={{
                     padding: '1rem 1.5rem',
                     borderBottom: '1px solid var(--border)',
-                    display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
                     background: 'var(--sidebar-bg)',

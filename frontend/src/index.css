@@ -216,6 +216,11 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
 ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 999px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
 
+/* ---- Mobile header hidden on desktop ---- */
+.mobile-header {
+    display: none !important;
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 768px) {
     /* Sidebar becomes a drawer on mobile */
@@ -223,10 +228,19 @@ tbody tr:hover { background: rgba(255,255,255,0.02); }
         transform: translateX(-100%);
         width: 260px !important;
     }
-    aside.open { transform: translateX(0); }
+
+    /* Show mobile header on small screens */
+    .mobile-header {
+        display: flex !important;
+    }
+
+    /* Show close button inside sidebar on mobile */
+    .mobile-close-btn {
+        display: inline-flex !important;
+    }
 
     /* Main content full width on mobile */
-    div[style*="marginLeft: 240px"] {
+    .main-content {
         margin-left: 0 !important;
     }
 
