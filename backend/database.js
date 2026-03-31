@@ -1,15 +1,10 @@
 const { createClient } = require('@libsql/client');
 require('dotenv').config();
 
-// Connect to Turso Cloud DB if deployed, or local file for development
-const isVercel = process.env.VERCEL || process.env.NODE_ENV === 'production';
-
-// Explicit fallbacks since Vercel is failing to inject environment variables properly 
-const explicitUrl = 'libsql://enterprise-db-abhivansh-parashar.aws-ap-south-1.turso.io';
-const explicitToken = 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzQzNjY1MDMsImlkIjoiMDE5ZDIwNzQtNGIwMS03MDRmLTkzZGYtMjRhNzMwZWY5ODZjIiwicmlkIjoiMWNhNTVhZjktMWFjNi00ZmI1LTlkZjYtOGFmYzQ5ZTcwYjI1In0.WWUYzYIZacFXzaq3pmo87T__buNixPN5W8oqsyIi_A3FJOhFBcFDR09JrpdBI_eDSBQESSQSfVAM_Rp8PQ1cBQ';
-
-const dbUrl = process.env.TURSO_DATABASE_URL || explicitUrl;
-const dbToken = process.env.TURSO_AUTH_TOKEN || explicitToken;
+// Connect to Turso Cloud DB
+// Uses environment variables first, with hardcoded fallbacks for deployment
+const dbUrl = process.env.TURSO_DATABASE_URL || 'libsql://enterprise-db-abhivansh-parashar.aws-ap-south-1.turso.io';
+const dbToken = process.env.TURSO_AUTH_TOKEN || 'eyJhbGciOiJFZERTQSIsInR5cCI6IkpXVCJ9.eyJhIjoicnciLCJpYXQiOjE3NzQzNjY1MDMsImlkIjoiMDE5ZDIwNzQtNGIwMS03MDRmLTkzZGYtMjRhNzMwZWY5ODZjIiwicmlkIjoiMWNhNTVhZjktMWFjNi00ZmI1LTlkZjYtOGFmYzQ5ZTcwYjI1In0.WWUYzYIZacFXzaq3pmo87T__buNixPN5W8oqsyIi_A3FJOhFBcFDR09JrpdBI_eDSBQESSQSfVAM_Rp8PQ1cBQ';
 
 const db = createClient({
   url: dbUrl,
