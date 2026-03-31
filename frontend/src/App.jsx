@@ -1,132 +1,169 @@
 import { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, Link, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { LogOut, User, Archive, LayoutDashboard, Moon, Sun } from 'lucide-react';
+import { LayoutDashboard, Archive, User, LogOut, Building2, Menu, X } from 'lucide-react';
 import Dashboard from './components/Dashboard';
-import Login from './components/Login';
-import Profile from './components/Profile';
 import ClosedDeals from './components/ClosedDeals';
+import Profile from './components/Profile';
+import Login from './components/Login';
 
-// Setup base URL for Vercel Deployment vs Localhost
-axios.defaults.baseURL = import.meta.env.PROD ? '/api' : 'http://localhost:5000/api';
-
-// Axios Interceptor for JWT auth token
-axios.interceptors.request.use(
-  (config) => {
+axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
+axios.interceptors.request.use((config) => {
     const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    if (token) config.headers.Authorization = `Bearer ${token}`;
     return config;
-  },
-  (error) => Promise.reject(error)
-);
+});
 
-// Global Axios Response Interceptor for Expired Tokens
-axios.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-      console.warn("JWT Token expired or invalid. Auto-logging out...");
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      window.location.href = '/'; 
-    }
-    return Promise.reject(error);
-  }
-);
+function Layout({ onLogout }) {
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const navigate = useNavigate();
 
-function AppContent() {
-  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem('token'));
-  const [theme, setTheme] = useState(localStorage.getItem('theme') || 'light');
-  const navigate = useNavigate();
+    const user = (() => {
+        try { return JSON.parse(localStorage.getItem('user')) || {}; } catch { return {}; }
+    })();
 
-  // Handle global theme
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('theme', theme);
-  }, [theme]);
+    const handleLogout = () => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        onLogout();
+        navigate('/login');
+    };
 
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  };
+    const navItems = [
+        { to: '/', icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
+        { to: '/closed', icon: <Archive size={18} />, label: 'Closed Deals' },
+        { to: '/profile', icon: <User size={18} />, label: 'Profile' },
+    ];
 
-  // Handle global 401 unauthenticated errors to force logout
-  useEffect(() => {
-    const interceptor = axios.interceptors.response.use(
-      (response) => response,
-      (error) => {
-        if (error.response && error.response.status === 401) {
-          handleLogout();
-        }
-        return Promise.reject(error);
-      }
-    );
-    return () => axios.interceptors.response.eject(interceptor);
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setIsAuthenticated(false);
-    navigate('/login');
-  };
-
-  const user = JSON.parse(localStorage.getItem('user') || 'null');
-  const location = useLocation();
-
-  return (
-    <div className="container">
-      {isAuthenticated && (
-        <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div>
-            <Link to="/" style={{ textDecoration: 'none', color: 'inherit' }}>
-              <h1 style={{ margin: 0 }}>Enterprise Sync</h1>
-            </Link>
-            <p className="text-secondary" style={{ marginTop: '0.25rem' }}>Track progress, unblock deals, and align updates</p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span style={{ fontWeight: '500' }}>Welcome, {user?.name || user?.email?.split('@')[0]}</span>
-            {location.pathname === '/closed' ? (
-              <Link to="/" className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
-                <LayoutDashboard size={16} /> Active Deals
-              </Link>
-            ) : (
-              <Link to="/closed" className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
-                <Archive size={16} /> Archive
-              </Link>
+    return (
+        <div style={{ display: 'flex', minHeight: '100vh' }}>
+            {/* Mobile overlay */}
+            {sidebarOpen && (
+                <div
+                    onClick={() => setSidebarOpen(false)}
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 40 }}
+                />
             )}
-            <Link to="/profile" className="btn-secondary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', textDecoration: 'none' }}>
-              <User size={16} /> Profile
-            </Link>
-            <button className="btn-secondary" onClick={toggleTheme} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '36px', height: '36px', borderRadius: '50%', padding: 0 }} aria-label="Toggle Dark Mode" title="Toggle Dark/Light Mode">
-              {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
-            </button>
-            <button className="btn-secondary" onClick={handleLogout} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <LogOut size={16} /> Logout
-            </button>
-          </div>
-        </header>
-      )}
 
-      <main>
-        <Routes>
-          <Route path="/login" element={!isAuthenticated ? <Login setAuth={setIsAuthenticated} /> : <Navigate to="/" />} />
-          <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/login" />} />
-          <Route path="/closed" element={isAuthenticated ? <ClosedDeals /> : <Navigate to="/login" />} />
-          <Route path="/" element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" />} />
-        </Routes>
-      </main>
-    </div>
-  );
+            {/* Sidebar */}
+            <aside style={{
+                width: '240px',
+                background: 'var(--sidebar-bg)',
+                borderRight: '1px solid var(--border)',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'fixed',
+                top: 0, bottom: 0, left: 0,
+                zIndex: 50,
+                transform: sidebarOpen ? 'translateX(0)' : undefined,
+                transition: 'transform 0.2s ease',
+            }}>
+                {/* Logo */}
+                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ background: 'var(--primary-bg)', padding: '0.5rem', borderRadius: '10px' }}>
+                        <Building2 size={22} color="var(--primary-accent)" />
+                    </div>
+                    <div>
+                        <div style={{ fontWeight: '700', fontSize: '0.95rem', letterSpacing: '-0.3px' }}>Enterprise Sync</div>
+                        <div className="text-secondary" style={{ fontSize: '0.75rem' }}>CRM Dashboard</div>
+                    </div>
+                    <button
+                        onClick={() => setSidebarOpen(false)}
+                        style={{ marginLeft: 'auto', background: 'transparent', border: 'none', cursor: 'pointer', display: 'none' }}
+                        className="mobile-close-btn">
+                        <X size={18} color="var(--text-secondary)" />
+                    </button>
+                </div>
+
+                {/* Nav */}
+                <nav style={{ flex: 1, padding: '1rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                    {navItems.map(item => (
+                        <NavLink
+                            key={item.to}
+                            to={item.to}
+                            end={item.to === '/'}
+                            onClick={() => setSidebarOpen(false)}
+                            style={({ isActive }) => ({
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.75rem',
+                                padding: '0.65rem 0.9rem',
+                                borderRadius: '8px',
+                                textDecoration: 'none',
+                                fontSize: '0.9rem',
+                                fontWeight: isActive ? '600' : '400',
+                                background: isActive ? 'var(--primary-bg)' : 'transparent',
+                                color: isActive ? 'var(--primary-accent)' : 'var(--text-secondary)',
+                                transition: 'all 0.15s ease',
+                            })}
+                        >
+                            {item.icon}
+                            {item.label}
+                        </NavLink>
+                    ))}
+                </nav>
+
+                {/* User & Logout */}
+                <div style={{ padding: '1rem 0.75rem', borderTop: '1px solid var(--border)' }}>
+                    <div style={{ padding: '0.75rem 0.9rem', marginBottom: '0.5rem', background: 'var(--surface)', borderRadius: '8px' }}>
+                        <div style={{ fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.15rem' }}>{user.name || user.email || 'User'}</div>
+                        <div className="text-secondary" style={{ fontSize: '0.75rem' }}>{user.role || 'Member'}</div>
+                    </div>
+                    <button
+                        onClick={handleLogout}
+                        style={{
+                            width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
+                            padding: '0.65rem 0.9rem', borderRadius: '8px', border: 'none',
+                            background: 'transparent', cursor: 'pointer', fontSize: '0.9rem',
+                            color: 'var(--danger)', fontWeight: '500'
+                        }}>
+                        <LogOut size={18} /> Sign Out
+                    </button>
+                </div>
+            </aside>
+
+            {/* Main content */}
+            <div style={{ marginLeft: '240px', flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                {/* Top bar (mobile) */}
+                <header style={{
+                    padding: '1rem 1.5rem',
+                    borderBottom: '1px solid var(--border)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    background: 'var(--sidebar-bg)',
+                    position: 'sticky', top: 0, zIndex: 30
+                }}>
+                    <button
+                        onClick={() => setSidebarOpen(true)}
+                        style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.25rem' }}>
+                        <Menu size={22} color="var(--text-primary)" />
+                    </button>
+                    <span style={{ fontWeight: '600', fontSize: '0.9rem' }}>Enterprise Sync</span>
+                    <div style={{ width: 28 }} />
+                </header>
+
+                <main style={{ flex: 1, padding: '2rem 2.5rem', overflowX: 'hidden' }}>
+                    <Routes>
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/closed" element={<ClosedDeals />} />
+                        <Route path="/profile" element={<Profile />} />
+                    </Routes>
+                </main>
+            </div>
+        </div>
+    );
 }
 
-function App() {
-  return (
-    <Router>
-      <AppContent />
-    </Router>
-  );
-}
+export default function App() {
+    const [isAuth, setIsAuth] = useState(!!localStorage.getItem('token'));
 
-export default App;
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route path="/login" element={isAuth ? <Navigate to="/" replace /> : <Login setAuth={setIsAuth} />} />
+                <Route path="/*" element={isAuth ? <Layout onLogout={() => setIsAuth(false)} /> : <Navigate to="/login" replace />} />
+            </Routes>
+        </BrowserRouter>
+    );
+}
