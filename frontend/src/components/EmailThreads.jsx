@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Mail, Plus, Trash2, ChevronDown, ChevronUp, User, X, Check } from 'lucide-react';
+import { Mail, Plus, Trash2, ChevronDown, ChevronUp, User, X, Check, ExternalLink } from 'lucide-react';
 
 export default function EmailThreads({ deals = [] }) {
-    const [threads, setThreads] = useState({});       // { clientName: [{ id, content, savedAt }] }
+    const [threads, setThreads] = useState({});       // { clientName: [{ id, content, link, savedAt }] }
     const [selectedClient, setSelectedClient] = useState('');
     const [newThread, setNewThread] = useState('');
+    const [threadLink, setThreadLink] = useState('');
     const [isAdding, setIsAdding] = useState(false);
     const [expandedClients, setExpandedClients] = useState({});
     const [customClient, setCustomClient] = useState('');
@@ -30,16 +31,12 @@ export default function EmailThreads({ deals = [] }) {
         const updated = { ...threads };
         if (!updated[clientName]) updated[clientName] = [];
         updated[clientName] = [
-            { id: Date.now(), content: newThread.trim(), savedAt: new Date().toLocaleString() },
+            { id: Date.now(), content: newThread.trim(), link: threadLink.trim() || '', savedAt: new Date().toLocaleString() },
             ...updated[clientName]
         ];
         save(updated);
-        setNewThread('');
-        setIsAdding(false);
-        setSelectedClient(clientName);
+        resetForm();
         setExpandedClients(prev => ({ ...prev, [clientName]: true }));
-        setCustomClient('');
-        setUseCustom(false);
     };
 
     const handleDeleteThread = (client, id) => {
@@ -49,13 +46,20 @@ export default function EmailThreads({ deals = [] }) {
         save(updated);
     };
 
+    const resetForm = () => {
+        setNewThread('');
+        setThreadLink('');
+        setIsAdding(false);
+        setCustomClient('');
+        setUseCustom(false);
+    };
+
     const toggleExpand = (client) => {
         setExpandedClients(prev => ({ ...prev, [client]: !prev[client] }));
     };
 
     const allClients = deals.map(d => d.clientName).filter(Boolean);
     const clientsWithThreads = Object.keys(threads);
-    // Merge: show all clients from deals + any saved thread clients not in deals
     const displayClients = [...new Set([...clientsWithThreads, ...allClients])];
 
     return (
@@ -84,7 +88,7 @@ export default function EmailThreads({ deals = [] }) {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                         <h4 style={{ margin: 0 }}>Paste Email Thread</h4>
                         <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.25rem' }}
-                            onClick={() => { setIsAdding(false); setNewThread(''); setCustomClient(''); setUseCustom(false); }}>
+                            onClick={resetForm}>
                             <X size={18} color="var(--text-secondary)" />
                         </button>
                     </div>
@@ -125,6 +129,17 @@ export default function EmailThreads({ deals = [] }) {
                         </div>
                     </div>
 
+                    {/* Gmail Thread Link */}
+                    <div style={{ marginBottom: '1rem' }}>
+                        <label className="text-secondary" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Gmail Thread Link (optional)</label>
+                        <input
+                            type="url"
+                            value={threadLink}
+                            onChange={e => setThreadLink(e.target.value)}
+                            placeholder="Paste Gmail thread URL here (e.g. https://mail.google.com/mail/u/0/#inbox/...)"
+                        />
+                    </div>
+
                     {/* Thread Textarea */}
                     <div style={{ marginBottom: '1rem' }}>
                         <label className="text-secondary" style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.875rem' }}>Email Thread Content</label>
@@ -138,7 +153,7 @@ export default function EmailThreads({ deals = [] }) {
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-                        <button className="btn-secondary" onClick={() => { setIsAdding(false); setNewThread(''); setCustomClient(''); setUseCustom(false); }}>
+                        <button className="btn-secondary" onClick={resetForm}>
                             Cancel
                         </button>
                         <button className="btn-primary"
@@ -189,10 +204,23 @@ export default function EmailThreads({ deals = [] }) {
                                         borderBottom: idx < threads[client].length - 1 ? '1px solid var(--border)' : 'none',
                                         background: 'rgba(0,0,0,0.01)'
                                     }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-                                            <span className="text-secondary" style={{ fontSize: '0.78rem' }}>
-                                                Saved on {thread.savedAt}
-                                            </span>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                <span className="text-secondary" style={{ fontSize: '0.78rem' }}>
+                                                    Saved on {thread.savedAt}
+                                                </span>
+                                                {thread.link && (
+                                                    <a href={thread.link} target="_blank" rel="noopener noreferrer"
+                                                        className="btn-secondary"
+                                                        style={{
+                                                            display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                                            padding: '0.2rem 0.6rem', fontSize: '0.75rem', textDecoration: 'none',
+                                                            color: 'var(--info)', borderColor: 'rgba(56, 189, 248, 0.25)'
+                                                        }}>
+                                                        <ExternalLink size={12} /> Open in Gmail
+                                                    </a>
+                                                )}
+                                            </div>
                                             <button
                                                 onClick={() => handleDeleteThread(client, thread.id)}
                                                 style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.1rem', display: 'flex', alignItems: 'center' }}

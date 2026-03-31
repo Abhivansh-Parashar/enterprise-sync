@@ -387,7 +387,7 @@ export default function Dashboard() {
             </div>
 
             {/* Quotes Section */}
-            <QuotesSection />
+            <QuotesSection deals={deals} />
 
             {/* Email Threads Section */}
             <EmailThreads deals={deals} />
