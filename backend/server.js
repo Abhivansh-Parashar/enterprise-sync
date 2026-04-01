@@ -11,7 +11,7 @@ const PORT = process.env.PORT || 5000;
 const JWT_SECRET = process.env.JWT_SECRET || 'fallback_secret';
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
 
 // Initialize database dynamically on Vercel Cold Starts before routing
 app.use(async (req, res, next) => {

@@ -115,7 +115,7 @@ export default function Dashboard() {
             setThreadModalClient(null);
         } catch (error) {
             console.error('Error saving thread:', error);
-            alert("Failed to save email thread.");
+            alert(`Failed: ${error.response?.data?.error || error.message}`);
         }
     };
 
@@ -137,7 +137,7 @@ export default function Dashboard() {
             setQuoteModalClient(null);
         } catch (error) {
             console.error('Error saving quote:', error);
-            alert("Failed to save quote sheet.");
+            alert(`Failed: ${error.response?.data?.error || error.message}`);
         }
     };
 

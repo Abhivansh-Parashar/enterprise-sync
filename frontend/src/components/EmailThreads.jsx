@@ -64,7 +64,7 @@ export default function EmailThreads() {
             setExpandedClients(prev => ({ ...prev, [clientName]: true }));
         } catch (error) {
             console.error("Failed to add thread:", error);
-            alert("Failed to save thread to database.");
+            alert(`Failed: ${error.response?.data?.error || error.message}`);
         }
     };
 

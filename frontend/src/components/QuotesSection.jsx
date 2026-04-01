@@ -76,7 +76,7 @@ export default function QuotesSection() {
             setExpandedClients(prev => ({ ...prev, [clientName]: true }));
         } catch (error) {
             console.error("Failed to add sheet:", error);
-            alert("Failed to save quote sheet to database.");
+            alert(`Failed: ${error.response?.data?.error || error.message}`);
         }
     };
 
