@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import axios from 'axios';
 import { Mail, Plus, Trash2, ChevronDown, ChevronUp, User, X, Check, ExternalLink } from 'lucide-react';
 
-export default function EmailThreads({ deals = [] }) {
+const API_BASE = '/api';
+
+export default function EmailThreads() {
     const [threads, setThreads] = useState({});       // { clientName: [{ id, content, link, savedAt }] }
     const [selectedClient, setSelectedClient] = useState('');
     const [newThread, setNewThread] = useState('');
@@ -10,6 +14,13 @@ export default function EmailThreads({ deals = [] }) {
     const [expandedClients, setExpandedClients] = useState({});
     const [customClient, setCustomClient] = useState('');
     const [useCustom, setUseCustom] = useState(false);
+    const [deals, setDeals] = useState([]);
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // Load deals from API
+    useEffect(() => {
+        axios.get(`${API_BASE}/deals`).then(res => setDeals(res.data)).catch(() => {});
+    }, []);
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -18,6 +29,17 @@ export default function EmailThreads({ deals = [] }) {
             try { setThreads(JSON.parse(stored)); } catch (_) {}
         }
     }, []);
+
+    // Handle ?client= URL param to auto-open form
+    useEffect(() => {
+        const clientParam = searchParams.get('client');
+        if (clientParam) {
+            setIsAdding(true);
+            setSelectedClient(clientParam);
+            // Clear the URL param so it doesn't re-trigger
+            setSearchParams({}, { replace: true });
+        }
+    }, [searchParams, setSearchParams]);
 
     const save = (updated) => {
         setThreads(updated);
@@ -63,15 +85,15 @@ export default function EmailThreads({ deals = [] }) {
     const displayClients = [...new Set([...clientsWithThreads, ...allClients])];
 
     return (
-        <div className="animate-fade-in" style={{ marginBottom: '2.5rem' }}>
-            {/* Section Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+        <div className="animate-fade-in">
+            {/* Page Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{ background: 'var(--info-bg)', padding: '0.75rem', borderRadius: '12px' }}>
-                        <Mail color="var(--info)" size={24} />
+                        <Mail color="var(--info)" size={28} />
                     </div>
                     <div>
-                        <h3 style={{ margin: 0 }}>Email Threads</h3>
+                        <h2 style={{ margin: 0 }}>Email Threads</h2>
                         <p className="text-secondary" style={{ margin: 0, fontSize: '0.85rem' }}>Full conversation history per client</p>
                     </div>
                 </div>
@@ -84,7 +106,7 @@ export default function EmailThreads({ deals = [] }) {
 
             {/* Add Thread Form */}
             {isAdding && (
-                <div className="glass-panel animate-fade-in" style={{ padding: '1.25rem', marginBottom: '1rem', border: '1px solid var(--primary-accent)' }}>
+                <div className="glass-panel animate-fade-in" style={{ padding: '1.25rem', marginBottom: '1.5rem', border: '1px solid var(--primary-accent)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                         <h4 style={{ margin: 0 }}>Paste Email Thread</h4>
                         <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.25rem' }}

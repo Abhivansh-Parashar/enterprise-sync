@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
-import { FileSpreadsheet, ExternalLink, Plus, Trash2, ChevronDown, ChevronUp, User, X, Check, Edit2 } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
+import axios from 'axios';
+import { FileSpreadsheet, ExternalLink, Plus, Trash2, ChevronDown, ChevronUp, User, X, Check } from 'lucide-react';
 
-export default function QuotesSection({ deals = [] }) {
+const API_BASE = '/api';
+
+export default function QuotesSection() {
     // { clientName: [{ id, url, label, savedAt }] }
     const [sheets, setSheets] = useState({});
     const [isAdding, setIsAdding] = useState(false);
@@ -11,13 +15,32 @@ export default function QuotesSection({ deals = [] }) {
     const [sheetUrl, setSheetUrl] = useState('');
     const [sheetLabel, setSheetLabel] = useState('');
     const [expandedClients, setExpandedClients] = useState({});
+    const [deals, setDeals] = useState([]);
+    const [searchParams, setSearchParams] = useSearchParams();
 
+    // Load deals from API
+    useEffect(() => {
+        axios.get(`${API_BASE}/deals`).then(res => setDeals(res.data)).catch(() => {});
+    }, []);
+
+    // Load from localStorage on mount
     useEffect(() => {
         const stored = localStorage.getItem('quotesSheets');
         if (stored) {
             try { setSheets(JSON.parse(stored)); } catch (_) {}
         }
     }, []);
+
+    // Handle ?client= URL param to auto-open form
+    useEffect(() => {
+        const clientParam = searchParams.get('client');
+        if (clientParam) {
+            setIsAdding(true);
+            setSelectedClient(clientParam);
+            // Clear the URL param so it doesn't re-trigger
+            setSearchParams({}, { replace: true });
+        }
+    }, [searchParams, setSearchParams]);
 
     const save = (updated) => {
         setSheets(updated);
@@ -75,15 +98,15 @@ export default function QuotesSection({ deals = [] }) {
     const displayClients = [...new Set([...clientsWithSheets, ...allClients])];
 
     return (
-        <div className="animate-fade-in" style={{ marginBottom: '2.5rem' }}>
-            {/* Section Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+        <div className="animate-fade-in">
+            {/* Page Header */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '2rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{ background: 'var(--success-bg)', padding: '0.75rem', borderRadius: '12px' }}>
-                        <FileSpreadsheet color="var(--success)" size={24} />
+                        <FileSpreadsheet color="var(--success)" size={28} />
                     </div>
                     <div>
-                        <h3 style={{ margin: 0 }}>Quotes Sheets</h3>
+                        <h2 style={{ margin: 0 }}>Quotes Sheets</h2>
                         <p className="text-secondary" style={{ margin: 0, fontSize: '0.85rem' }}>Google Sheets linked per client</p>
                     </div>
                 </div>
@@ -96,7 +119,7 @@ export default function QuotesSection({ deals = [] }) {
 
             {/* Add Sheet Form */}
             {isAdding && (
-                <div className="glass-panel animate-fade-in" style={{ padding: '1.25rem', marginBottom: '1rem', border: '1px solid var(--primary-accent)' }}>
+                <div className="glass-panel animate-fade-in" style={{ padding: '1.25rem', marginBottom: '1.5rem', border: '1px solid var(--primary-accent)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                         <h4 style={{ margin: 0 }}>Link a Quote Sheet</h4>
                         <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.25rem' }}

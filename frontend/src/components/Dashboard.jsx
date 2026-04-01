@@ -4,8 +4,7 @@ import axios from 'axios';
 import { AlertCircle, Calendar, Briefcase, Building, ShieldAlert, Archive, User, X } from 'lucide-react';
 import DealsTable from './DealsTable';
 import DealForm from './DealForm';
-import QuotesSection from './QuotesSection';
-import EmailThreads from './EmailThreads';
+
 
 const API_BASE = '/api';
 
@@ -386,11 +385,7 @@ export default function Dashboard() {
                 <DealsTable deals={sortedDeals} onEdit={handleEditDeal} onDelete={handleDeleteDeal} onCloseDeal={handleCloseDeal} />
             </div>
 
-            {/* Quotes Section */}
-            <QuotesSection deals={deals} />
 
-            {/* Email Threads Section */}
-            <EmailThreads deals={deals} />
 
             {/* Deal Add/Edit Modal */}
             {isModalOpen && (

@@ -1,11 +1,16 @@
 import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { LayoutDashboard, Archive, User, LogOut, Building2, Menu, X } from 'lucide-react';
+import {
+    LayoutDashboard, Archive, User, LogOut, Building2, Menu, X,
+    Mail, FileSpreadsheet, Sun, Moon, PanelLeftClose, PanelLeftOpen
+} from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import ClosedDeals from './components/ClosedDeals';
 import Profile from './components/Profile';
 import Login from './components/Login';
+import QuotesSection from './components/QuotesSection';
+import EmailThreads from './components/EmailThreads';
 
 axios.defaults.baseURL = import.meta.env.VITE_API_URL || '';
 axios.interceptors.request.use((config) => {
@@ -27,11 +32,29 @@ axios.interceptors.response.use(
 
 function Layout({ onLogout }) {
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+        return localStorage.getItem('sidebarCollapsed') === 'true';
+    });
+    const [darkMode, setDarkMode] = useState(() => {
+        const stored = localStorage.getItem('theme');
+        return stored ? stored === 'dark' : true; // default dark
+    });
     const navigate = useNavigate();
 
     const user = (() => {
         try { return JSON.parse(localStorage.getItem('user')) || {}; } catch { return {}; }
     })();
+
+    // Apply theme to HTML element
+    useEffect(() => {
+        document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+        localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+    }, [darkMode]);
+
+    // Persist sidebar collapsed state
+    useEffect(() => {
+        localStorage.setItem('sidebarCollapsed', sidebarCollapsed ? 'true' : 'false');
+    }, [sidebarCollapsed]);
 
     const handleLogout = () => {
         localStorage.removeItem('token');
@@ -42,6 +65,8 @@ function Layout({ onLogout }) {
 
     const navItems = [
         { to: '/', icon: <LayoutDashboard size={18} />, label: 'Dashboard' },
+        { to: '/quotes', icon: <FileSpreadsheet size={18} />, label: 'Quotes Sheets' },
+        { to: '/email-threads', icon: <Mail size={18} />, label: 'Email Threads' },
         { to: '/closed', icon: <Archive size={18} />, label: 'Closed Deals' },
         { to: '/profile', icon: <User size={18} />, label: 'Profile' },
     ];
@@ -57,24 +82,13 @@ function Layout({ onLogout }) {
             )}
 
             {/* Sidebar */}
-            <aside style={{
-                width: '240px',
-                background: 'var(--sidebar-bg)',
-                borderRight: '1px solid var(--border)',
-                display: 'flex',
-                flexDirection: 'column',
-                position: 'fixed',
-                top: 0, bottom: 0, left: 0,
-                zIndex: 50,
-                transform: sidebarOpen ? 'translateX(0)' : undefined,
-                transition: 'transform 0.2s ease',
-            }}>
+            <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${sidebarOpen ? 'mobile-open' : ''}`}>
                 {/* Logo */}
-                <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ background: 'var(--primary-bg)', padding: '0.5rem', borderRadius: '10px' }}>
+                <div className="sidebar-logo">
+                    <div style={{ background: 'var(--primary-bg)', padding: '0.5rem', borderRadius: '10px', flexShrink: 0 }}>
                         <Building2 size={22} color="var(--primary-accent)" />
                     </div>
-                    <div>
+                    <div className="sidebar-logo-text">
                         <div style={{ fontWeight: '700', fontSize: '0.95rem', letterSpacing: '-0.3px' }}>Enterprise Sync</div>
                         <div className="text-secondary" style={{ fontSize: '0.75rem' }}>CRM Dashboard</div>
                     </div>
@@ -87,54 +101,71 @@ function Layout({ onLogout }) {
                 </div>
 
                 {/* Nav */}
-                <nav style={{ flex: 1, padding: '1rem 0.75rem', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                <nav className="sidebar-nav">
                     {navItems.map(item => (
                         <NavLink
                             key={item.to}
                             to={item.to}
                             end={item.to === '/'}
                             onClick={() => setSidebarOpen(false)}
-                            style={({ isActive }) => ({
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '0.75rem',
-                                padding: '0.65rem 0.9rem',
-                                borderRadius: '8px',
-                                textDecoration: 'none',
-                                fontSize: '0.9rem',
-                                fontWeight: isActive ? '600' : '400',
-                                background: isActive ? 'var(--primary-bg)' : 'transparent',
-                                color: isActive ? 'var(--primary-accent)' : 'var(--text-secondary)',
-                                transition: 'all 0.15s ease',
-                            })}
+                            className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
+                            data-tooltip={item.label}
                         >
-                            {item.icon}
-                            {item.label}
+                            <span className="sidebar-link-icon">{item.icon}</span>
+                            <span className="sidebar-link-label">{item.label}</span>
                         </NavLink>
                     ))}
                 </nav>
 
-                {/* User & Logout */}
-                <div style={{ padding: '1rem 0.75rem', borderTop: '1px solid var(--border)' }}>
-                    <div style={{ padding: '0.75rem 0.9rem', marginBottom: '0.5rem', background: 'var(--surface)', borderRadius: '8px' }}>
-                        <div style={{ fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.15rem' }}>{user.name || user.email || 'User'}</div>
-                        <div className="text-secondary" style={{ fontSize: '0.75rem' }}>{user.role || 'Member'}</div>
-                    </div>
+                {/* Bottom: Theme + User + Logout */}
+                <div className="sidebar-bottom">
+                    {/* Theme Toggle */}
+                    <button className="theme-toggle" onClick={() => setDarkMode(prev => !prev)}>
+                        <span className="theme-icon">
+                            {darkMode ? <Sun size={18} /> : <Moon size={18} />}
+                        </span>
+                        <span className="theme-toggle-label">
+                            {darkMode ? 'Light Mode' : 'Dark Mode'}
+                        </span>
+                    </button>
+
+                    {/* Collapse Toggle */}
                     <button
-                        onClick={handleLogout}
-                        style={{
-                            width: '100%', display: 'flex', alignItems: 'center', gap: '0.75rem',
-                            padding: '0.65rem 0.9rem', borderRadius: '8px', border: 'none',
-                            background: 'transparent', cursor: 'pointer', fontSize: '0.9rem',
-                            color: 'var(--danger)', fontWeight: '500'
-                        }}>
-                        <LogOut size={18} /> Sign Out
+                        className="sidebar-collapse-btn"
+                        onClick={() => setSidebarCollapsed(prev => !prev)}
+                        title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+                        style={{ width: '100%' }}
+                    >
+                        {sidebarCollapsed ? <PanelLeftOpen size={18} /> : <PanelLeftClose size={18} />}
+                    </button>
+
+                    {/* User Card */}
+                    <div className="sidebar-user-card">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                            <div className="sidebar-user-avatar" style={{
+                                width: '32px', height: '32px', borderRadius: '8px',
+                                background: 'var(--primary-bg)', display: 'flex',
+                                alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                            }}>
+                                <User size={16} color="var(--primary-accent)" />
+                            </div>
+                            <div className="sidebar-user-info">
+                                <div style={{ fontSize: '0.85rem', fontWeight: '600', marginBottom: '0.15rem' }}>{user.name || user.email || 'User'}</div>
+                                <div className="text-secondary" style={{ fontSize: '0.75rem' }}>{user.role || 'Member'}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Sign Out */}
+                    <button className="sidebar-signout" onClick={handleLogout}>
+                        <LogOut size={18} style={{ flexShrink: 0 }} />
+                        <span className="sidebar-signout-label">Sign Out</span>
                     </button>
                 </div>
             </aside>
 
             {/* Main content */}
-            <div className="main-content" style={{ marginLeft: '240px', flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <div className={`main-content ${sidebarCollapsed ? 'sidebar-is-collapsed' : ''}`}>
                 {/* Top bar (mobile only) */}
                 <header className="mobile-header" style={{
                     padding: '1rem 1.5rem',
@@ -156,6 +187,8 @@ function Layout({ onLogout }) {
                 <main style={{ flex: 1, padding: '2rem 2.5rem', overflowX: 'hidden' }}>
                     <Routes>
                         <Route path="/" element={<Dashboard />} />
+                        <Route path="/quotes" element={<QuotesSection />} />
+                        <Route path="/email-threads" element={<EmailThreads />} />
                         <Route path="/closed" element={<ClosedDeals />} />
                         <Route path="/profile" element={<Profile />} />
                     </Routes>

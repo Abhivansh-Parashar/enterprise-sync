@@ -1,7 +1,10 @@
 import { format } from 'date-fns';
-import { Edit2, Trash2, Archive } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Edit2, Trash2, Archive, Mail, FileSpreadsheet } from 'lucide-react';
 
 export default function DealsTable({ deals, onEdit, onDelete, onCloseDeal }) {
+    const navigate = useNavigate();
+
     if (!deals || deals.length === 0) {
         return <p className="text-secondary" style={{ padding: '1rem 0' }}>No active deals found.</p>;
     }
@@ -12,6 +15,14 @@ export default function DealsTable({ deals, onEdit, onDelete, onCloseDeal }) {
         if (s.includes('discovery') || s.includes('qualif')) return 'badge-info';
         if (s.includes('negotiation') || s.includes('proposal')) return 'badge-warning';
         return 'badge-secondary';
+    };
+
+    const handleAddThread = (clientName) => {
+        navigate(`/email-threads?client=${encodeURIComponent(clientName)}`);
+    };
+
+    const handleAddQuote = (clientName) => {
+        navigate(`/quotes?client=${encodeURIComponent(clientName)}`);
     };
 
     return (
@@ -64,28 +75,50 @@ export default function DealsTable({ deals, onEdit, onDelete, onCloseDeal }) {
                                 ) : '-'}
                             </td>
                             <td>
-                                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <div style={{ display: 'flex', gap: '0.35rem', alignItems: 'center' }}>
                                     <button
-                                        className="btn-secondary"
+                                        className="icon-action-btn"
                                         style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem' }}
                                         onClick={() => onEdit(deal)}
+                                        title="Edit deal"
                                     >
-                                        <Edit2 size={14} /> Update
+                                        <Edit2 size={14} />
+                                        <span className="icon-action-label">Update</span>
                                     </button>
                                     <button
-                                        className="btn-danger"
-                                        style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem', background: 'var(--success-bg)', color: 'var(--success)', borderColor: 'var(--border)' }}
+                                        className="icon-action-btn thread-btn"
+                                        onClick={() => handleAddThread(deal.clientName)}
+                                        title="Add Email Thread"
+                                    >
+                                        <Mail size={14} />
+                                        <span className="icon-action-label">Thread</span>
+                                    </button>
+                                    <button
+                                        className="icon-action-btn quote-btn"
+                                        onClick={() => handleAddQuote(deal.clientName)}
+                                        title="Add Quote"
+                                    >
+                                        <FileSpreadsheet size={14} />
+                                        <span className="icon-action-label">Quote</span>
+                                    </button>
+                                    <button
+                                        className="icon-action-btn"
+                                        style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem',
+                                            background: 'var(--success-bg)', color: 'var(--success)', borderColor: 'var(--border)' }}
                                         onClick={() => onCloseDeal(deal.id)}
                                         title="Mark as closed"
                                     >
-                                        <Archive size={14} /> Close
+                                        <Archive size={14} />
+                                        <span className="icon-action-label">Close</span>
                                     </button>
                                     <button
-                                        className="btn-danger"
-                                        style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', padding: '0.25rem 0.5rem' }}
+                                        className="icon-action-btn"
+                                        style={{ color: 'var(--danger)' }}
                                         onClick={() => onDelete(deal.id)}
+                                        title="Delete deal"
                                     >
-                                        <Trash2 size={14} /> Delete
+                                        <Trash2 size={14} />
+                                        <span className="icon-action-label" style={{ color: 'var(--danger)' }}>Delete</span>
                                     </button>
                                 </div>
                             </td>
