@@ -221,6 +221,104 @@ app.delete('/api/deals/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// --- Email Threads Routes ---
+app.get('/api/email-threads', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await db.execute("SELECT * FROM email_threads ORDER BY id DESC");
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/email-threads', authenticateToken, async (req, res) => {
+  const { clientName, content, link } = req.body;
+  const savedAt = new Date().toLocaleString();
+  try {
+    const result = await db.execute({
+      sql: "INSERT INTO email_threads (clientName, content, link, savedAt) VALUES (?, ?, ?, ?)",
+      args: [clientName, content, link || '', savedAt]
+    });
+    res.json({ id: result.lastInsertRowid.toString() });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/email-threads/:id', authenticateToken, async (req, res) => {
+  const { content, link } = req.body;
+  try {
+    const result = await db.execute({
+      sql: "UPDATE email_threads SET content = ?, link = ? WHERE id = ?",
+      args: [content, link || '', req.params.id]
+    });
+    res.json({ message: "Thread updated successfully", changes: result.rowsAffected });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/email-threads/:id', authenticateToken, async (req, res) => {
+  try {
+    const result = await db.execute({
+      sql: "DELETE FROM email_threads WHERE id = ?",
+      args: [req.params.id]
+    });
+    res.json({ message: "Thread deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// --- Quotes Routes ---
+app.get('/api/quotes', authenticateToken, async (req, res) => {
+  try {
+    const { rows } = await db.execute("SELECT * FROM quotes ORDER BY id DESC");
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/quotes', authenticateToken, async (req, res) => {
+  const { clientName, url, label } = req.body;
+  const savedAt = new Date().toLocaleString();
+  try {
+    const result = await db.execute({
+      sql: "INSERT INTO quotes (clientName, url, label, savedAt) VALUES (?, ?, ?, ?)",
+      args: [clientName, url, label || 'Quote Sheet', savedAt]
+    });
+    res.json({ id: result.lastInsertRowid.toString() });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.put('/api/quotes/:id', authenticateToken, async (req, res) => {
+  const { url, label } = req.body;
+  try {
+    const result = await db.execute({
+      sql: "UPDATE quotes SET url = ?, label = ? WHERE id = ?",
+      args: [url, label, req.params.id]
+    });
+    res.json({ message: "Quote updated successfully", changes: result.rowsAffected });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/quotes/:id', authenticateToken, async (req, res) => {
+  try {
+    const result = await db.execute({
+      sql: "DELETE FROM quotes WHERE id = ?",
+      args: [req.params.id]
+    });
+    res.json({ message: "Quote deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.get('/api/metrics', authenticateToken, async (req, res) => {
   const today = new Date().toISOString().split('T')[0];
   const twoDaysAgoDate = new Date(Date.now() - 2 * 86400000).toISOString().split('T')[0];

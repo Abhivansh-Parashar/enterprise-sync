@@ -50,6 +50,26 @@ const initDB = () => {
       )
     `);
 
+        await db.execute(`
+      CREATE TABLE IF NOT EXISTS email_threads (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        clientName TEXT NOT NULL,
+        content TEXT NOT NULL,
+        link TEXT,
+        savedAt TEXT
+      )
+    `);
+
+        await db.execute(`
+      CREATE TABLE IF NOT EXISTS quotes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        clientName TEXT NOT NULL,
+        url TEXT NOT NULL,
+        label TEXT,
+        savedAt TEXT
+      )
+    `);
+
         // Seed initial users if empty
         const { rows: userRows } = await db.execute("SELECT COUNT(*) as count FROM users");
         if (userRows[0].count === 0) {

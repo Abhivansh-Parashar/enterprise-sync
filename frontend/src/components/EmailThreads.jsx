@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { Mail, Plus, Trash2, ChevronDown, ChevronUp, User, X, Check, ExternalLink } from 'lucide-react';
+import { Mail, Plus, Trash2, Edit2, ChevronDown, ChevronUp, User, X, Check, ExternalLink } from 'lucide-react';
 
 const API_BASE = '/api';
 
 export default function EmailThreads() {
-    const [threads, setThreads] = useState({});       // { clientName: [{ id, content, link, savedAt }] }
+    const [threads, setThreads] = useState([]); // Array directly from DB
     const [selectedClient, setSelectedClient] = useState('');
     const [newThread, setNewThread] = useState('');
     const [threadLink, setThreadLink] = useState('');
@@ -17,17 +17,25 @@ export default function EmailThreads() {
     const [deals, setDeals] = useState([]);
     const [searchParams, setSearchParams] = useSearchParams();
 
+    // Edit state
+    const [editingId, setEditingId] = useState(null);
+    const [editContent, setEditContent] = useState('');
+    const [editLink, setEditLink] = useState('');
+
     // Load deals from API
     useEffect(() => {
         axios.get(`${API_BASE}/deals`).then(res => setDeals(res.data)).catch(() => {});
     }, []);
 
-    // Load from localStorage on mount
+    // Load threads from API
+    const fetchThreads = () => {
+        axios.get(`${API_BASE}/email-threads`)
+            .then(res => setThreads(res.data))
+            .catch(err => console.error("Failed to load threads:", err));
+    };
+
     useEffect(() => {
-        const stored = localStorage.getItem('emailThreads');
-        if (stored) {
-            try { setThreads(JSON.parse(stored)); } catch (_) {}
-        }
+        fetchThreads();
     }, []);
 
     // Handle ?client= URL param to auto-open form
@@ -41,31 +49,59 @@ export default function EmailThreads() {
         }
     }, [searchParams, setSearchParams]);
 
-    const save = (updated) => {
-        setThreads(updated);
-        localStorage.setItem('emailThreads', JSON.stringify(updated));
-    };
-
     const clientName = useCustom ? customClient.trim() : selectedClient;
 
-    const handleAddThread = () => {
+    const handleAddThread = async () => {
         if (!clientName || !newThread.trim()) return;
-        const updated = { ...threads };
-        if (!updated[clientName]) updated[clientName] = [];
-        updated[clientName] = [
-            { id: Date.now(), content: newThread.trim(), link: threadLink.trim() || '', savedAt: new Date().toLocaleString() },
-            ...updated[clientName]
-        ];
-        save(updated);
-        resetForm();
-        setExpandedClients(prev => ({ ...prev, [clientName]: true }));
+        try {
+            await axios.post(`${API_BASE}/email-threads`, {
+                clientName,
+                content: newThread.trim(),
+                link: threadLink.trim()
+            });
+            fetchThreads();
+            resetForm();
+            setExpandedClients(prev => ({ ...prev, [clientName]: true }));
+        } catch (error) {
+            console.error("Failed to add thread:", error);
+            alert("Failed to save thread to database.");
+        }
     };
 
-    const handleDeleteThread = (client, id) => {
-        const updated = { ...threads };
-        updated[client] = updated[client].filter(t => t.id !== id);
-        if (updated[client].length === 0) delete updated[client];
-        save(updated);
+    const handleUpdateThread = async (id) => {
+        if (!editContent.trim()) return;
+        try {
+            await axios.put(`${API_BASE}/email-threads/${id}`, {
+                content: editContent.trim(),
+                link: editLink.trim()
+            });
+            setEditingId(null);
+            fetchThreads();
+        } catch (error) {
+            console.error("Failed to update thread:", error);
+            alert("Failed to update thread in database.");
+        }
+    };
+
+    const handleDeleteThread = async (id) => {
+        try {
+            await axios.delete(`${API_BASE}/email-threads/${id}`);
+            fetchThreads();
+        } catch (error) {
+            console.error("Failed to delete thread:", error);
+        }
+    };
+
+    const startEdit = (thread) => {
+        setEditingId(thread.id);
+        setEditContent(thread.content);
+        setEditLink(thread.link || '');
+    };
+
+    const cancelEdit = () => {
+        setEditingId(null);
+        setEditContent('');
+        setEditLink('');
     };
 
     const resetForm = () => {
@@ -80,9 +116,27 @@ export default function EmailThreads() {
         setExpandedClients(prev => ({ ...prev, [client]: !prev[client] }));
     };
 
+    // Group threads by client
+    const groupedThreads = threads.reduce((acc, thread) => {
+        if (!acc[thread.clientName]) acc[thread.clientName] = [];
+        acc[thread.clientName].push(thread);
+        return acc;
+    }, {});
+
     const allClients = deals.map(d => d.clientName).filter(Boolean);
-    const clientsWithThreads = Object.keys(threads);
+    const clientsWithThreads = Object.keys(groupedThreads);
     const displayClients = [...new Set([...clientsWithThreads, ...allClients])];
+
+    const linkify = (text) => {
+        if (!text) return '';
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        return text.split(urlRegex).map((part, i) => {
+            if (part.match(urlRegex)) {
+                return <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary-accent)', textDecoration: 'underline' }}>{part}</a>;
+            }
+            return part;
+        });
+    };
 
     return (
         <div className="animate-fade-in">
@@ -210,7 +264,7 @@ export default function EmailThreads() {
                                 <div>
                                     <strong style={{ fontSize: '0.95rem' }}>{client}</strong>
                                     <span className="text-secondary" style={{ fontSize: '0.8rem', marginLeft: '0.75rem' }}>
-                                        {threads[client]?.length} thread{threads[client]?.length !== 1 ? 's' : ''}
+                                        {groupedThreads[client].length} thread{groupedThreads[client].length !== 1 ? 's' : ''}
                                     </span>
                                 </div>
                             </div>
@@ -220,53 +274,86 @@ export default function EmailThreads() {
                         {/* Thread List */}
                         {expandedClients[client] && (
                             <div style={{ borderTop: '1px solid var(--border)' }}>
-                                {threads[client].map((thread, idx) => (
+                                {groupedThreads[client].map((thread, idx) => (
                                     <div key={thread.id} style={{
                                         padding: '1rem 1.25rem',
-                                        borderBottom: idx < threads[client].length - 1 ? '1px solid var(--border)' : 'none',
+                                        borderBottom: idx < groupedThreads[client].length - 1 ? '1px solid var(--border)' : 'none',
                                         background: 'rgba(0,0,0,0.01)'
                                     }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                                <span className="text-secondary" style={{ fontSize: '0.78rem' }}>
-                                                    Saved on {thread.savedAt}
-                                                </span>
-                                                {thread.link && (
-                                                    <a href={thread.link} target="_blank" rel="noopener noreferrer"
-                                                        className="btn-secondary"
-                                                        style={{
-                                                            display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
-                                                            padding: '0.2rem 0.6rem', fontSize: '0.75rem', textDecoration: 'none',
-                                                            color: 'var(--info)', borderColor: 'rgba(56, 189, 248, 0.25)'
-                                                        }}>
-                                                        <ExternalLink size={12} /> Open in Gmail
-                                                    </a>
-                                                )}
+                                        {/* View Mode */}
+                                        {editingId !== thread.id ? (
+                                            <>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                        <span className="text-secondary" style={{ fontSize: '0.78rem' }}>
+                                                            Saved on {thread.savedAt}
+                                                        </span>
+                                                        {thread.link && (
+                                                            <a href={thread.link} target="_blank" rel="noopener noreferrer"
+                                                                className="btn-secondary"
+                                                                style={{
+                                                                    display: 'inline-flex', alignItems: 'center', gap: '0.3rem',
+                                                                    padding: '0.2rem 0.6rem', fontSize: '0.75rem', textDecoration: 'none',
+                                                                    color: 'var(--info)', borderColor: 'rgba(56, 189, 248, 0.25)'
+                                                                }}>
+                                                                <ExternalLink size={12} /> Open Link
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                        <button
+                                                            onClick={() => startEdit(thread)}
+                                                            className="btn-secondary"
+                                                            style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                                                            title="Edit thread">
+                                                            <Edit2 size={12} /> Edit
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDeleteThread(thread.id)}
+                                                            className="btn-danger"
+                                                            style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'transparent', borderColor: 'transparent', padding: '0' }}
+                                                            title="Delete thread">
+                                                            <Trash2 size={14} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div style={{
+                                                    margin: 0,
+                                                    whiteSpace: 'pre-wrap',
+                                                    wordBreak: 'break-word',
+                                                    fontSize: '0.83rem',
+                                                    fontFamily: 'inherit',
+                                                    lineHeight: '1.6',
+                                                    color: 'var(--text-primary)',
+                                                    background: 'var(--surface)',
+                                                    padding: '0.75rem 1rem',
+                                                    borderRadius: '8px',
+                                                    border: '1px solid var(--border)',
+                                                    maxHeight: '320px',
+                                                    overflowY: 'auto'
+                                                }}>
+                                                    {linkify(thread.content)}
+                                                </div>
+                                            </>
+                                        ) : (
+                                            /* Edit Mode */
+                                            <div className="animate-fade-in" style={{ background: 'var(--surface)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                                                <div style={{ marginBottom: '1rem' }}>
+                                                    <label className="text-secondary" style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.75rem' }}>Update Link</label>
+                                                    <input type="url" value={editLink} onChange={e => setEditLink(e.target.value)} placeholder="https://..." style={{ fontSize: '0.8rem', padding: '0.4rem' }} />
+                                                </div>
+                                                <div style={{ marginBottom: '1rem' }}>
+                                                    <label className="text-secondary" style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.75rem' }}>Update Content</label>
+                                                    <textarea value={editContent} onChange={e => setEditContent(e.target.value)} rows={6} style={{ width: '100%', fontFamily: 'monospace', fontSize: '0.8rem', resize: 'vertical' }} />
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                                                    <button className="btn-secondary" onClick={cancelEdit} style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem' }}>Cancel</button>
+                                                    <button className="btn-primary" onClick={() => handleUpdateThread(thread.id)} style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }} disabled={!editContent.trim()}>
+                                                        <Check size={12} /> Save Changes
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <button
-                                                onClick={() => handleDeleteThread(client, thread.id)}
-                                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.1rem', display: 'flex', alignItems: 'center' }}
-                                                title="Delete thread">
-                                                <Trash2 size={14} color="var(--danger)" />
-                                            </button>
-                                        </div>
-                                        <pre style={{
-                                            margin: 0,
-                                            whiteSpace: 'pre-wrap',
-                                            wordBreak: 'break-word',
-                                            fontSize: '0.83rem',
-                                            fontFamily: 'inherit',
-                                            lineHeight: '1.6',
-                                            color: 'var(--text-primary)',
-                                            background: 'var(--surface)',
-                                            padding: '0.75rem 1rem',
-                                            borderRadius: '8px',
-                                            border: '1px solid var(--border)',
-                                            maxHeight: '320px',
-                                            overflowY: 'auto'
-                                        }}>
-                                            {thread.content}
-                                        </pre>
+                                        )}
                                     </div>
                                 ))}
                             </div>

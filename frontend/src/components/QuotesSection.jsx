@@ -1,13 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { FileSpreadsheet, ExternalLink, Plus, Trash2, ChevronDown, ChevronUp, User, X, Check } from 'lucide-react';
+import { FileSpreadsheet, ExternalLink, Plus, Trash2, Edit2, ChevronDown, ChevronUp, User, X, Check } from 'lucide-react';
 
 const API_BASE = '/api';
 
 export default function QuotesSection() {
-    // { clientName: [{ id, url, label, savedAt }] }
-    const [sheets, setSheets] = useState({});
+    const [sheets, setSheets] = useState([]); // Array directly from DB
     const [isAdding, setIsAdding] = useState(false);
     const [selectedClient, setSelectedClient] = useState('');
     const [customClient, setCustomClient] = useState('');
@@ -18,17 +17,25 @@ export default function QuotesSection() {
     const [deals, setDeals] = useState([]);
     const [searchParams, setSearchParams] = useSearchParams();
 
+    // Edit state
+    const [editingId, setEditingId] = useState(null);
+    const [editUrl, setEditUrl] = useState('');
+    const [editLabel, setEditLabel] = useState('');
+
     // Load deals from API
     useEffect(() => {
         axios.get(`${API_BASE}/deals`).then(res => setDeals(res.data)).catch(() => {});
     }, []);
 
-    // Load from localStorage on mount
+    // Load sheets from API
+    const fetchSheets = () => {
+        axios.get(`${API_BASE}/quotes`)
+            .then(res => setSheets(res.data))
+            .catch(err => console.error("Failed to load quotes:", err));
+    };
+
     useEffect(() => {
-        const stored = localStorage.getItem('quotesSheets');
-        if (stored) {
-            try { setSheets(JSON.parse(stored)); } catch (_) {}
-        }
+        fetchSheets();
     }, []);
 
     // Handle ?client= URL param to auto-open form
@@ -41,11 +48,6 @@ export default function QuotesSection() {
             setSearchParams({}, { replace: true });
         }
     }, [searchParams, setSearchParams]);
-
-    const save = (updated) => {
-        setSheets(updated);
-        localStorage.setItem('quotesSheets', JSON.stringify(updated));
-    };
 
     const toEmbedUrl = (url) => {
         if (!url) return '';
@@ -61,24 +63,57 @@ export default function QuotesSection() {
 
     const clientName = useCustom ? customClient.trim() : selectedClient;
 
-    const handleAdd = () => {
+    const handleAdd = async () => {
         if (!clientName || !sheetUrl.trim()) return;
-        const updated = { ...sheets };
-        if (!updated[clientName]) updated[clientName] = [];
-        updated[clientName] = [
-            { id: Date.now(), url: sheetUrl.trim(), label: sheetLabel.trim() || 'Quote Sheet', savedAt: new Date().toLocaleString() },
-            ...updated[clientName]
-        ];
-        save(updated);
-        resetForm();
-        setExpandedClients(prev => ({ ...prev, [clientName]: true }));
+        try {
+            await axios.post(`${API_BASE}/quotes`, {
+                clientName,
+                url: sheetUrl.trim(),
+                label: sheetLabel.trim() || 'Quote Sheet'
+            });
+            fetchSheets();
+            resetForm();
+            setExpandedClients(prev => ({ ...prev, [clientName]: true }));
+        } catch (error) {
+            console.error("Failed to add sheet:", error);
+            alert("Failed to save quote sheet to database.");
+        }
     };
 
-    const handleDelete = (client, id) => {
-        const updated = { ...sheets };
-        updated[client] = updated[client].filter(s => s.id !== id);
-        if (updated[client].length === 0) delete updated[client];
-        save(updated);
+    const handleUpdate = async (id) => {
+        if (!editUrl.trim()) return;
+        try {
+            await axios.put(`${API_BASE}/quotes/${id}`, {
+                url: editUrl.trim(),
+                label: editLabel.trim() || 'Quote Sheet'
+            });
+            setEditingId(null);
+            fetchSheets();
+        } catch (error) {
+            console.error("Failed to update sheet:", error);
+            alert("Failed to update quote sheet in database.");
+        }
+    };
+
+    const handleDelete = async (id) => {
+        try {
+            await axios.delete(`${API_BASE}/quotes/${id}`);
+            fetchSheets();
+        } catch (error) {
+            console.error("Failed to delete sheet:", error);
+        }
+    };
+
+    const startEdit = (sheet) => {
+        setEditingId(sheet.id);
+        setEditUrl(sheet.url);
+        setEditLabel(sheet.label);
+    };
+
+    const cancelEdit = () => {
+        setEditingId(null);
+        setEditUrl('');
+        setEditLabel('');
     };
 
     const resetForm = () => {
@@ -93,8 +128,15 @@ export default function QuotesSection() {
         setExpandedClients(prev => ({ ...prev, [client]: !prev[client] }));
     };
 
+    // Group sheets by client
+    const groupedSheets = sheets.reduce((acc, sheet) => {
+        if (!acc[sheet.clientName]) acc[sheet.clientName] = [];
+        acc[sheet.clientName].push(sheet);
+        return acc;
+    }, {});
+
     const allClients = deals.map(d => d.clientName).filter(Boolean);
-    const clientsWithSheets = Object.keys(sheets);
+    const clientsWithSheets = Object.keys(groupedSheets);
     const displayClients = [...new Set([...clientsWithSheets, ...allClients])];
 
     return (
@@ -204,7 +246,7 @@ export default function QuotesSection() {
                                 <div>
                                     <strong style={{ fontSize: '0.95rem' }}>{client}</strong>
                                     <span className="text-secondary" style={{ fontSize: '0.8rem', marginLeft: '0.75rem' }}>
-                                        {sheets[client]?.length} sheet{sheets[client]?.length !== 1 ? 's' : ''}
+                                        {groupedSheets[client].length} sheet{groupedSheets[client].length !== 1 ? 's' : ''}
                                     </span>
                                 </div>
                             </div>
@@ -214,40 +256,70 @@ export default function QuotesSection() {
                         {/* Sheet List */}
                         {expandedClients[client] && (
                             <div style={{ borderTop: '1px solid var(--border)' }}>
-                                {sheets[client].map((sheet, idx) => (
+                                {groupedSheets[client].map((sheet, idx) => (
                                     <div key={sheet.id} style={{
                                         padding: '1rem 1.25rem',
-                                        borderBottom: idx < sheets[client].length - 1 ? '1px solid var(--border)' : 'none',
+                                        borderBottom: idx < groupedSheets[client].length - 1 ? '1px solid var(--border)' : 'none',
                                     }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-                                            <div>
-                                                <strong style={{ fontSize: '0.9rem' }}>{sheet.label}</strong>
-                                                <span className="text-secondary" style={{ fontSize: '0.78rem', marginLeft: '0.75rem' }}>
-                                                    Added {sheet.savedAt}
-                                                </span>
+                                        {/* View Mode */}
+                                        {editingId !== sheet.id ? (
+                                            <>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+                                                    <div>
+                                                        <strong style={{ fontSize: '0.9rem' }}>{sheet.label}</strong>
+                                                        <span className="text-secondary" style={{ fontSize: '0.78rem', marginLeft: '0.75rem' }}>
+                                                            Added {sheet.savedAt}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                                                        <a href={sheet.url} target="_blank" rel="noopener noreferrer"
+                                                            className="btn-secondary"
+                                                            style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.2rem 0.5rem', fontSize: '0.75rem', textDecoration: 'none' }}>
+                                                            <ExternalLink size={12} /> Open Link
+                                                        </a>
+                                                        <button onClick={() => startEdit(sheet)}
+                                                            className="btn-secondary"
+                                                            style={{ padding: '0.2rem 0.5rem', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}
+                                                            title="Edit sheet">
+                                                            <Edit2 size={12} /> Edit
+                                                        </button>
+                                                        <button onClick={() => handleDelete(sheet.id)}
+                                                            className="btn-danger"
+                                                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.1rem', display: 'flex', alignItems: 'center' }}
+                                                            title="Remove sheet">
+                                                            <Trash2 size={14} color="var(--danger)" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                {/* Embedded Sheet Preview */}
+                                                <div style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)' }}>
+                                                    <iframe
+                                                        src={toEmbedUrl(sheet.url)}
+                                                        title={`${client} - ${sheet.label}`}
+                                                        style={{ width: '100%', height: '360px', border: 'none', display: 'block' }}
+                                                        loading="lazy"
+                                                    />
+                                                </div>
+                                            </>
+                                        ) : (
+                                            /* Edit Mode */
+                                            <div className="animate-fade-in" style={{ background: 'var(--surface)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                                                <div style={{ marginBottom: '1rem' }}>
+                                                    <label className="text-secondary" style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.75rem' }}>Label</label>
+                                                    <input type="text" value={editLabel} onChange={e => setEditLabel(e.target.value)} style={{ fontSize: '0.8rem', padding: '0.4rem', width: '100%' }} />
+                                                </div>
+                                                <div style={{ marginBottom: '1rem' }}>
+                                                    <label className="text-secondary" style={{ display: 'block', marginBottom: '0.3rem', fontSize: '0.75rem' }}>URL</label>
+                                                    <input type="url" value={editUrl} onChange={e => setEditUrl(e.target.value)} style={{ fontSize: '0.8rem', padding: '0.4rem', width: '100%' }} />
+                                                </div>
+                                                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.5rem' }}>
+                                                    <button className="btn-secondary" onClick={cancelEdit} style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem' }}>Cancel</button>
+                                                    <button className="btn-primary" onClick={() => handleUpdate(sheet.id)} style={{ padding: '0.3rem 0.75rem', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }} disabled={!editUrl.trim()}>
+                                                        <Check size={12} /> Save Changes
+                                                    </button>
+                                                </div>
                                             </div>
-                                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                                <a href={sheet.url} target="_blank" rel="noopener noreferrer"
-                                                    className="btn-secondary"
-                                                    style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', padding: '0.25rem 0.6rem', fontSize: '0.8rem', textDecoration: 'none' }}>
-                                                    <ExternalLink size={13} /> Open
-                                                </a>
-                                                <button onClick={() => handleDelete(client, sheet.id)}
-                                                    style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.1rem', display: 'flex', alignItems: 'center' }}
-                                                    title="Remove sheet">
-                                                    <Trash2 size={14} color="var(--danger)" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                        {/* Embedded Sheet Preview */}
-                                        <div style={{ borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--border)' }}>
-                                            <iframe
-                                                src={toEmbedUrl(sheet.url)}
-                                                title={`${client} - ${sheet.label}`}
-                                                style={{ width: '100%', height: '360px', border: 'none', display: 'block' }}
-                                                loading="lazy"
-                                            />
-                                        </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>

@@ -104,18 +104,19 @@ export default function Dashboard() {
         setThreadLink('');
     };
 
-    const handleSaveThread = () => {
+    const handleSaveThread = async () => {
         if (!threadModalClient || !threadContent.trim()) return;
-        const stored = localStorage.getItem('emailThreads');
-        let threads = {};
-        if (stored) { try { threads = JSON.parse(stored); } catch (_) {} }
-        if (!threads[threadModalClient]) threads[threadModalClient] = [];
-        threads[threadModalClient] = [
-            { id: Date.now(), content: threadContent.trim(), link: threadLink.trim() || '', savedAt: new Date().toLocaleString() },
-            ...threads[threadModalClient]
-        ];
-        localStorage.setItem('emailThreads', JSON.stringify(threads));
-        setThreadModalClient(null);
+        try {
+            await axios.post(`${API_BASE}/email-threads`, {
+                clientName: threadModalClient,
+                content: threadContent.trim(),
+                link: threadLink.trim() || ''
+            });
+            setThreadModalClient(null);
+        } catch (error) {
+            console.error('Error saving thread:', error);
+            alert("Failed to save email thread.");
+        }
     };
 
     // --- Quote Modal Handlers ---
@@ -125,18 +126,19 @@ export default function Dashboard() {
         setQuoteLabel('');
     };
 
-    const handleSaveQuote = () => {
+    const handleSaveQuote = async () => {
         if (!quoteModalClient || !quoteUrl.trim()) return;
-        const stored = localStorage.getItem('quotesSheets');
-        let sheets = {};
-        if (stored) { try { sheets = JSON.parse(stored); } catch (_) {} }
-        if (!sheets[quoteModalClient]) sheets[quoteModalClient] = [];
-        sheets[quoteModalClient] = [
-            { id: Date.now(), url: quoteUrl.trim(), label: quoteLabel.trim() || 'Quote Sheet', savedAt: new Date().toLocaleString() },
-            ...sheets[quoteModalClient]
-        ];
-        localStorage.setItem('quotesSheets', JSON.stringify(sheets));
-        setQuoteModalClient(null);
+        try {
+            await axios.post(`${API_BASE}/quotes`, {
+                clientName: quoteModalClient,
+                url: quoteUrl.trim(),
+                label: quoteLabel.trim() || 'Quote Sheet'
+            });
+            setQuoteModalClient(null);
+        } catch (error) {
+            console.error('Error saving quote:', error);
+            alert("Failed to save quote sheet.");
+        }
     };
 
     if (loading) return (
