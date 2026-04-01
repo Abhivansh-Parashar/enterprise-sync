@@ -309,20 +309,37 @@ export default function Dashboard() {
 
             {/* Main Deals Table */}
             <div className="glass-panel" style={{ padding: '1.5rem', overflow: 'visible' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', position: 'relative' }}>
-                    <h3>Active Enterprise Sync Deals</h3>
-                    <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <select className="btn-secondary" style={{ padding: '0.4rem 0.8rem', borderRadius: '6px', outline: 'none' }} value={sortOption} onChange={(e) => setSortOption(e.target.value)}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', position: 'relative', flexWrap: 'wrap', gap: '0.75rem' }}>
+                    <h3 style={{ margin: 0 }}>Active Enterprise Sync Deals</h3>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                        <select className="btn-secondary" style={{
+                            padding: '0.5rem 0.9rem',
+                            borderRadius: '8px',
+                            outline: 'none',
+                            height: '38px',
+                            fontSize: '0.85rem',
+                            minWidth: '160px'
+                        }} value={sortOption} onChange={(e) => setSortOption(e.target.value)}>
                             <option value="newest">Sort: By Latest</option>
-                            <option value="priority_desc">Priority: High to Low</option>
-                            <option value="priority_asc">Priority: Low to High</option>
+                            <option value="priority_desc">Priority: High → Low</option>
+                            <option value="priority_asc">Priority: Low → High</option>
                             <option value="followup_asc">Follow-up: Closest</option>
                             <option value="followup_desc">Follow-up: Farthest</option>
                         </select>
-                        <button className={`btn-secondary ${isFilterOpen ? 'active' : ''}`} onClick={() => setIsFilterOpen(!isFilterOpen)}>
+                        <button
+                            className={`btn-secondary ${isFilterOpen ? 'active' : ''}`}
+                            onClick={() => setIsFilterOpen(!isFilterOpen)}
+                            style={{ height: '38px', padding: '0 0.9rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                        >
                             {isFilterOpen ? '✕ Close Filters' : '🔍 Filter Deals'}
                         </button>
-                        <button className="btn-primary" onClick={() => { window.scrollTo({ top: 0, behavior: 'instant' }); handleAddNewDeal(); }}>+ Create New Deal</button>
+                        <button
+                            className="btn-primary"
+                            onClick={() => { window.scrollTo({ top: 0, behavior: 'instant' }); handleAddNewDeal(); }}
+                            style={{ height: '38px', padding: '0 1rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                        >
+                            + Create New Deal
+                        </button>
                     </div>
 
                     {/* Filter Popup Menu (LeetCode Style) */}
