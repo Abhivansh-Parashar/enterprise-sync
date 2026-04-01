@@ -1,10 +1,7 @@
 import { format } from 'date-fns';
-import { useNavigate } from 'react-router-dom';
 import { Edit2, Trash2, Archive, Mail, FileSpreadsheet } from 'lucide-react';
 
-export default function DealsTable({ deals, onEdit, onDelete, onCloseDeal }) {
-    const navigate = useNavigate();
-
+export default function DealsTable({ deals, onEdit, onDelete, onCloseDeal, onAddThread, onAddQuote }) {
     if (!deals || deals.length === 0) {
         return <p className="text-secondary" style={{ padding: '1rem 0' }}>No active deals found.</p>;
     }
@@ -15,14 +12,6 @@ export default function DealsTable({ deals, onEdit, onDelete, onCloseDeal }) {
         if (s.includes('discovery') || s.includes('qualif')) return 'badge-info';
         if (s.includes('negotiation') || s.includes('proposal')) return 'badge-warning';
         return 'badge-secondary';
-    };
-
-    const handleAddThread = (clientName) => {
-        navigate(`/email-threads?client=${encodeURIComponent(clientName)}`);
-    };
-
-    const handleAddQuote = (clientName) => {
-        navigate(`/quotes?client=${encodeURIComponent(clientName)}`);
     };
 
     return (
@@ -87,7 +76,7 @@ export default function DealsTable({ deals, onEdit, onDelete, onCloseDeal }) {
                                     </button>
                                     <button
                                         className="icon-action-btn thread-btn"
-                                        onClick={() => handleAddThread(deal.clientName)}
+                                        onClick={() => onAddThread(deal.clientName)}
                                         title="Add Email Thread"
                                     >
                                         <Mail size={14} />
@@ -95,7 +84,7 @@ export default function DealsTable({ deals, onEdit, onDelete, onCloseDeal }) {
                                     </button>
                                     <button
                                         className="icon-action-btn quote-btn"
-                                        onClick={() => handleAddQuote(deal.clientName)}
+                                        onClick={() => onAddQuote(deal.clientName)}
                                         title="Add Quote"
                                     >
                                         <FileSpreadsheet size={14} />

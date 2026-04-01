@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import axios from 'axios';
-import { AlertCircle, Calendar, Briefcase, Building, ShieldAlert, Archive, User, X } from 'lucide-react';
+import { AlertCircle, Calendar, Briefcase, Building, ShieldAlert, Archive, User, X, Mail, FileSpreadsheet, Check, ExternalLink } from 'lucide-react';
 import DealsTable from './DealsTable';
 import DealForm from './DealForm';
 
@@ -17,6 +17,16 @@ export default function Dashboard() {
     const [editingDeal, setEditingDeal] = useState(null);
     const [deletingDealId, setDeletingDealId] = useState(null);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+    // Thread modal state
+    const [threadModalClient, setThreadModalClient] = useState(null);
+    const [threadContent, setThreadContent] = useState('');
+    const [threadLink, setThreadLink] = useState('');
+
+    // Quote modal state
+    const [quoteModalClient, setQuoteModalClient] = useState(null);
+    const [quoteUrl, setQuoteUrl] = useState('');
+    const [quoteLabel, setQuoteLabel] = useState('');
 
     // LeetCode-style Filter states
     const [filterMatch, setFilterMatch] = useState('All');
@@ -85,6 +95,48 @@ export default function Dashboard() {
         } catch (error) {
             console.error('Error closing deal:', error);
         }
+    };
+
+    // --- Thread Modal Handlers ---
+    const handleOpenThreadModal = (clientName) => {
+        setThreadModalClient(clientName);
+        setThreadContent('');
+        setThreadLink('');
+    };
+
+    const handleSaveThread = () => {
+        if (!threadModalClient || !threadContent.trim()) return;
+        const stored = localStorage.getItem('emailThreads');
+        let threads = {};
+        if (stored) { try { threads = JSON.parse(stored); } catch (_) {} }
+        if (!threads[threadModalClient]) threads[threadModalClient] = [];
+        threads[threadModalClient] = [
+            { id: Date.now(), content: threadContent.trim(), link: threadLink.trim() || '', savedAt: new Date().toLocaleString() },
+            ...threads[threadModalClient]
+        ];
+        localStorage.setItem('emailThreads', JSON.stringify(threads));
+        setThreadModalClient(null);
+    };
+
+    // --- Quote Modal Handlers ---
+    const handleOpenQuoteModal = (clientName) => {
+        setQuoteModalClient(clientName);
+        setQuoteUrl('');
+        setQuoteLabel('');
+    };
+
+    const handleSaveQuote = () => {
+        if (!quoteModalClient || !quoteUrl.trim()) return;
+        const stored = localStorage.getItem('quotesSheets');
+        let sheets = {};
+        if (stored) { try { sheets = JSON.parse(stored); } catch (_) {} }
+        if (!sheets[quoteModalClient]) sheets[quoteModalClient] = [];
+        sheets[quoteModalClient] = [
+            { id: Date.now(), url: quoteUrl.trim(), label: quoteLabel.trim() || 'Quote Sheet', savedAt: new Date().toLocaleString() },
+            ...sheets[quoteModalClient]
+        ];
+        localStorage.setItem('quotesSheets', JSON.stringify(sheets));
+        setQuoteModalClient(null);
     };
 
     if (loading) return (
@@ -382,7 +434,7 @@ export default function Dashboard() {
                     )}
                 </div>
 
-                <DealsTable deals={sortedDeals} onEdit={handleEditDeal} onDelete={handleDeleteDeal} onCloseDeal={handleCloseDeal} />
+                <DealsTable deals={sortedDeals} onEdit={handleEditDeal} onDelete={handleDeleteDeal} onCloseDeal={handleCloseDeal} onAddThread={handleOpenThreadModal} onAddQuote={handleOpenQuoteModal} />
             </div>
 
 
@@ -407,6 +459,93 @@ export default function Dashboard() {
                             <button className="btn-secondary" onClick={() => setDeletingDealId(null)}>Cancel</button>
                             <button className="btn-primary" style={{ background: 'var(--danger)', boxShadow: '0 4px 6px -1px rgba(239,68,68,0.4)' }} onClick={confirmDeleteDeal}>
                                 Yes, Delete it
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* Add Email Thread Modal */}
+            {threadModalClient && createPortal(
+                <div className="modal-overlay" onClick={() => setThreadModalClient(null)}>
+                    <div className="modal-content animate-fade-in" style={{ maxWidth: '560px' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{ background: 'var(--info-bg)', padding: '0.5rem', borderRadius: '8px' }}>
+                                    <Mail size={20} color="var(--info)" />
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: 0 }}>Add Email Thread</h3>
+                                    <p className="text-secondary" style={{ margin: 0, fontSize: '0.8rem' }}>for <strong>{threadModalClient}</strong></p>
+                                </div>
+                            </div>
+                            <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.25rem' }} onClick={() => setThreadModalClient(null)}>
+                                <X size={18} color="var(--text-secondary)" />
+                            </button>
+                        </div>
+
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label className="text-secondary" style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem' }}>Gmail Thread Link (optional)</label>
+                            <input type="url" value={threadLink} onChange={e => setThreadLink(e.target.value)}
+                                placeholder="https://mail.google.com/mail/u/0/#inbox/..." />
+                        </div>
+
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label className="text-secondary" style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem' }}>Email Thread Content</label>
+                            <textarea value={threadContent} onChange={e => setThreadContent(e.target.value)}
+                                rows={8} placeholder="Paste the full email thread here..."
+                                style={{ width: '100%', fontFamily: 'monospace', fontSize: '0.85rem', resize: 'vertical' }} />
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                            <button className="btn-secondary" onClick={() => setThreadModalClient(null)}>Cancel</button>
+                            <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                                onClick={handleSaveThread} disabled={!threadContent.trim()}>
+                                <Check size={14} /> Save Thread
+                            </button>
+                        </div>
+                    </div>
+                </div>,
+                document.body
+            )}
+
+            {/* Add Quote Sheet Modal */}
+            {quoteModalClient && createPortal(
+                <div className="modal-overlay" onClick={() => setQuoteModalClient(null)}>
+                    <div className="modal-content animate-fade-in" style={{ maxWidth: '560px' }} onClick={e => e.stopPropagation()}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                <div style={{ background: 'var(--success-bg)', padding: '0.5rem', borderRadius: '8px' }}>
+                                    <FileSpreadsheet size={20} color="var(--success)" />
+                                </div>
+                                <div>
+                                    <h3 style={{ margin: 0 }}>Add Quote Sheet</h3>
+                                    <p className="text-secondary" style={{ margin: 0, fontSize: '0.8rem' }}>for <strong>{quoteModalClient}</strong></p>
+                                </div>
+                            </div>
+                            <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: '0.25rem' }} onClick={() => setQuoteModalClient(null)}>
+                                <X size={18} color="var(--text-secondary)" />
+                            </button>
+                        </div>
+
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label className="text-secondary" style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem' }}>Sheet Label (optional)</label>
+                            <input type="text" value={quoteLabel} onChange={e => setQuoteLabel(e.target.value)}
+                                placeholder="e.g. Q1 Pricing, Final Quote..." />
+                        </div>
+
+                        <div style={{ marginBottom: '1rem' }}>
+                            <label className="text-secondary" style={{ display: 'block', marginBottom: '0.4rem', fontSize: '0.85rem' }}>Google Sheets Link</label>
+                            <input type="url" value={quoteUrl} onChange={e => setQuoteUrl(e.target.value)}
+                                placeholder="Paste your Google Sheets link here..." />
+                        </div>
+
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                            <button className="btn-secondary" onClick={() => setQuoteModalClient(null)}>Cancel</button>
+                            <button className="btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                                onClick={handleSaveQuote} disabled={!quoteUrl.trim()}>
+                                <Check size={14} /> Save Sheet
                             </button>
                         </div>
                     </div>
