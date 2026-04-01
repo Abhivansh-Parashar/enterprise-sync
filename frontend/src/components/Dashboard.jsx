@@ -311,14 +311,14 @@ export default function Dashboard() {
             <div className="glass-panel" style={{ padding: '1.5rem', overflow: 'visible' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', position: 'relative', flexWrap: 'wrap', gap: '0.75rem' }}>
                     <h3 style={{ margin: 0 }}>Active Enterprise Sync Deals</h3>
-                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                         <select className="btn-secondary" style={{
-                            padding: '0.5rem 0.9rem',
+                            padding: '0 0.75rem',
                             borderRadius: '8px',
                             outline: 'none',
-                            height: '38px',
-                            fontSize: '0.85rem',
-                            minWidth: '160px'
+                            height: '36px',
+                            fontSize: '0.82rem',
+                            width: '170px'
                         }} value={sortOption} onChange={(e) => setSortOption(e.target.value)}>
                             <option value="newest">Sort: By Latest</option>
                             <option value="priority_desc">Priority: High → Low</option>
@@ -329,14 +329,14 @@ export default function Dashboard() {
                         <button
                             className={`btn-secondary ${isFilterOpen ? 'active' : ''}`}
                             onClick={() => setIsFilterOpen(!isFilterOpen)}
-                            style={{ height: '38px', padding: '0 0.9rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                            style={{ height: '36px', padding: '0 0.75rem', fontSize: '0.82rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', width: '150px', whiteSpace: 'nowrap' }}
                         >
                             {isFilterOpen ? '✕ Close Filters' : '🔍 Filter Deals'}
                         </button>
                         <button
                             className="btn-primary"
                             onClick={() => { window.scrollTo({ top: 0, behavior: 'instant' }); handleAddNewDeal(); }}
-                            style={{ height: '38px', padding: '0 1rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                            style={{ height: '36px', padding: '0 0.75rem', fontSize: '0.82rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem', width: '170px', whiteSpace: 'nowrap' }}
                         >
                             + Create New Deal
                         </button>
